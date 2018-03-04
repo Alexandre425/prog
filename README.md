@@ -3,20 +3,21 @@ Programação 2017-2018
 
 Como fazer push/pull:
 
-Criar directory "prog" na pasta x
+  Criar directory "prog" na pasta x
 
-Abrir a linha de comandos em x
-git clone https://github.com/Alexandre425/prog.git
+  Abrir a linha de comandos em x
 
-git pull
+  git clone https://github.com/Alexandre425/prog.git
 
-git add -A LAB1 (por exemplo)
+  git pull
 
-git add ficheiro_solto
+  git add -A LAB1 (por exemplo)
 
-git commit -m "descrição do commit. tem de estar texto aqui"
+  git add ficheiro_solto
 
-git push
+  git commit -m "descrição do commit. tem de estar texto aqui"
+
+  git push
   
   
   
