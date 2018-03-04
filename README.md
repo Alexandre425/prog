@@ -12,6 +12,8 @@ Como fazer push/pull:
   * git pull
 
   * git add -A LAB1 (por exemplo)
+  
+  * git add . (isto adiciona todos os ficheiros alterados)
 
   * git add ficheiro_solto
 
