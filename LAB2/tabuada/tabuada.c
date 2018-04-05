@@ -37,7 +37,8 @@ int main(void){
 
           printf("Insert '0' to exit the program, or any other number to keep going!\n");
 
-            if(scanf("%d", &input) == 0)
+            scanf("%d", &input);
+            if(input == 0)
               return EXIT_SUCCESS;
 
           //geração de mais dois numeros aleatórios, caso o resultado esteja correto
@@ -46,6 +47,8 @@ int main(void){
         }
         else
           printf("\nWhoops! Thats not it, try again!\n");
+
+          input = 1;
 
     }
 
@@ -58,8 +61,8 @@ int getNumbers(int* num1, int* num2){
 
   int result = 0;
 
-  *num1 = (rand() % 11);
-  *num2 = (rand() % 11);
+  *num1 = (rand() % 10);
+  *num2 = (rand() % 10);
 
   result = (*num1) * (*num2);
 
