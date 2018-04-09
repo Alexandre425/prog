@@ -27,6 +27,8 @@
 #define RECT_CIRCLE_R 16
 #define RECT_CIRCLE_MARGIN 23
 
+#define MAX_GAMES 200
+
 // declaration of the functions related to graphical issues
 void InitEverything(int , int , TTF_Font **, SDL_Surface **, SDL_Window ** , SDL_Renderer **, TTF_Font ** );
 void InitSDL();
@@ -35,12 +37,13 @@ SDL_Window* CreateWindow(int , int );
 SDL_Renderer* CreateRenderer(int , int , SDL_Window *);
 int RenderText(int, int, const char *, TTF_Font *, SDL_Color *, SDL_Renderer *);
 int RenderLogo(int, int, SDL_Surface *, SDL_Renderer *);
-int RenderTable(int, int, int [], TTF_Font *, SDL_Surface **, SDL_Renderer *);
+int RenderTable(int, int, int [], TTF_Font *, SDL_Surface **, SDL_Renderer *, int[][MAX_BOARD_POS]);
 void ProcessMouseEvent(int , int , int [], int , int *, int * );
 void RenderPoints(int [][MAX_BOARD_POS], int, int, int [], int, SDL_Renderer *);
 void RenderStats( SDL_Renderer *, TTF_Font *, int [], int , int );
 void filledCircleRGBA(SDL_Renderer * , int , int , int , int , int , int );
-
+//Renders game information pop-ups
+void RenderGameInfo(SDL_Renderer*, int, SDL_Surface**);
 
 // Declaration of the functions related to functionality
 //Reads the input parameters
@@ -53,11 +56,11 @@ int getRandom(int);
 void inputRegister(int[][MAX_BOARD_POS], int[][MAX_SELBOARD_POS], int, int, int*);
 //Verifies if the user made a legal move
 int inputVerify(int[][MAX_BOARD_POS], int[][MAX_SELBOARD_POS], int);
-//Clears the board according to the input received
+//Clears the board according to the input received (and the verification)
 void boardClear(int[][MAX_BOARD_POS], int[][MAX_BOARD_POS], int[][MAX_SELBOARD_POS], int, int, int, int, int [MAX_COLORS]);
 //Clears the input arrays, resetting them to their default state
 void inputClear(int[][MAX_BOARD_POS], int[][MAX_SELBOARD_POS]);
-//Fills the matrix (and moves the columns down) with the dots from the hidden matrix
+//Moves the dots down and generates random dots at the top
 void boardDown(int[][MAX_BOARD_POS], int, int, int);
 //Verifies if there are any possible moves left, shuffling the board if not
 int shuffleVerify(int[][MAX_BOARD_POS], int, int);
@@ -66,7 +69,9 @@ void boardShuffle(int[][MAX_BOARD_POS], int, int);
 //Verifies if the game has ended
 int gameEndVerify(int[MAX_COLORS], int);
 //Keeps track of the user's score
-void scoreTrack(int);
+void scoreTrack(int, int[][MAX_GAMES], int, int, int*);
+//Makes the file with the user's score
+void filePrint(int[][MAX_GAMES], int, FILE*, char[STRING_SIZE]);
 
 // definition of some strings: they cannot be changed when the program is executed !
 const char myName[] = "Alexandre Rodrigues";
@@ -83,7 +88,7 @@ int main( void )
     SDL_Renderer *renderer = NULL;
     TTF_Font *serif = NULL;
     TTF_Font *bigSerif = NULL;
-    SDL_Surface *imgs[2];
+    SDL_Surface *imgs[5];
     SDL_Event event;
     int delay = 300;
     int quit = 0;
@@ -114,8 +119,19 @@ int main( void )
     //parameters to update as the game progresses
     int currObjectives[MAX_COLORS] = {0};
     int currMoves = 0;
+    //global parameters across all games
+      //number of games
+      int gameCount = 0;
+      //[0] stores 1 if victory, 0 if defeat. [1] stores number of used moves if victory
+      int gameScore[2][MAX_GAMES] = {{0}};
+      int endConditions = 0;
+      int shuffle = 0;
+    //time to hold the info on screen for
+    int sleep = 0;
+    FILE *stats = NULL;
 
 
+    //random num gen initialization
     srand(time(NULL));
 
     //Gather the game parameters and ready them before display
@@ -124,6 +140,16 @@ int main( void )
 
     // initialize graphics
     InitEverything(width, height, &serif, imgs, &window, &renderer, &bigSerif);
+
+    RenderTable( board_pos_x, board_pos_y, board_size_px, serif, imgs, renderer, selBoard);
+
+    SDL_RenderPresent(renderer);
+
+    //holds the program until the user presses 'n' to start the game
+    SDL_PollEvent(&event);
+    while (event.key.keysym.sym != SDLK_n){
+      SDL_PollEvent(&event);
+    }
 
     while( quit == 0 )
     {
@@ -139,6 +165,8 @@ int main( void )
                 switch ( event.key.keysym.sym )
                 {
                     case SDLK_n:
+                        printf("Game end!\n");
+                        scoreTrack(-1, gameScore, moves, currMoves, &gameCount);
                         newGame(board, board_pos_x, board_pos_y, colorNum, objectives, currObjectives, moves, &currMoves);
                           break;
                     case SDLK_q:
@@ -162,16 +190,18 @@ int main( void )
             {
                 ProcessMouseEvent(event.button.x, event.button.y, board_size_px, square_size_px, &pt_x, &pt_y);
                 printf("Button up: %d %d\n", pt_x, pt_y);
+
+                //checking to see if the play was valid and legal
                 valid = inputVerify(board, selBoard2, currCount);
                 if (valid != -1){
+                  //clearing the board and such
                   boardClear(board, selBoard, selBoard2, valid, currCount, board_pos_x, board_pos_y, currObjectives);
                   boardDown(board, board_pos_x, board_pos_y, colorNum);
                   currMoves--;
                 }
+
+                //clearing the user input arrays
                 inputClear(selBoard, selBoard2);
-                if(shuffleVerify(board, board_pos_x, board_pos_y) == 1){
-                  boardShuffle(board, board_pos_x, board_pos_y);
-                }
 
                 mouseDown = 0;
                 currCount = 0;
@@ -184,30 +214,80 @@ int main( void )
                   inputRegister(selBoard, selBoard2, pt_x, pt_y, &currCount);
             }
         }
+
         // render game table
-        square_size_px = RenderTable( board_pos_x, board_pos_y, board_size_px, serif, imgs, renderer);
+        square_size_px = RenderTable( board_pos_x, board_pos_y, board_size_px, serif, imgs, renderer, selBoard);
+
         // render board
         RenderPoints(board, board_pos_x, board_pos_y, board_size_px, square_size_px, renderer);
+
+        // checking to see if the board needs shuffling, then shuffling it if so
+        shuffle = shuffleVerify(board, board_pos_x, board_pos_y);
+        if (shuffle == 1)
+        boardShuffle(board, board_pos_x, board_pos_y);
+
+
+        // -1 if defeat, 1 if victory, 0 if the game keeps going
+        endConditions = gameEndVerify(currObjectives, currMoves);
+        if (endConditions != 0){
+          printf("Game end!\n");
+          scoreTrack(endConditions, gameScore, moves, currMoves, &gameCount);
+          newGame(board, board_pos_x, board_pos_y, colorNum, objectives, currObjectives, moves, &currMoves);
+        }
+
         // zeroes out currObjectives' indexes if they are negative
         for (int i = 0; i < colorNum; i++)
           if (currObjectives[i] < 0)
             currObjectives[i] = 0;
+
         // render score
         RenderStats(renderer, bigSerif, currObjectives, colorNum, currMoves);
+
+        //renders the game information about an event
+        //if endConditions is 1, VICTORY is displayed, if it is -1, DEFEAT is displayed
+        //if it is at zero, and the function still gets run, it means we are shuffling
+        if (endConditions != 0 || shuffle == 1){
+          printf("Game info!\n");
+          RenderGameInfo(renderer, endConditions, imgs);
+          sleep = 2000;
+        }
+
         // render in the screen all changes above
         SDL_RenderPresent(renderer);
+
+        //delay for when displaying game info
+        SDL_Delay(sleep);
+        sleep = 0;
+
         // add a delay
         SDL_Delay( delay );
     }
+    //###################//
+    //GAME LOOP ENDS HERE//
+    //###################//
+
 
     // free memory allocated for images and textures and closes everything including fonts
     TTF_CloseFont(serif);
     TTF_CloseFont(bigSerif);
-    SDL_FreeSurface(imgs[0]);
-    SDL_FreeSurface(imgs[1]);
+    for (int i = 0; i < 4; i++)
+      SDL_FreeSurface(imgs[i]);
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    stats = fopen("game_statistics.txt", "w");
+
+    if (stats == NULL){
+      printf("ERROR! Could not open file!\n");
+      return EXIT_FAILURE;
+    }
+
+    filePrint(gameScore, gameCount, stats, name);
+
+    fclose(stats);
+
     return EXIT_SUCCESS;
 }
 
@@ -222,6 +302,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
 
   printf("\n\nPlease insert the game parameters as they are requested.\n");
 
+  //getting the columns
   do{
     printf("Columns (5-15): ");
     //getting the string
@@ -235,6 +316,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
     buffer[0] = '\0';
   }while(*cols < 3 || *cols > 15);
 
+  //getting the lines
   do{
     printf("Lines (5-15): ");
     fgets(buffer, STRING_SIZE, stdin);
@@ -244,6 +326,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
     buffer[0] = '\0';
   }while(*lines < 3 || *lines > 15);
 
+  //getting the number of colors
   do{
     printf("Colors (2-5): ");
     fgets(buffer, STRING_SIZE, stdin);
@@ -252,6 +335,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
       printf("Value is not in the defined limits!\n");
   }while(*colorNum < 2 || *colorNum > 5);
 
+  //getting the target score for each color
   printf("Targets(1-99)...\n");
   for(int i = 0; i < *colorNum; i++){
     do{
@@ -264,6 +348,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
     }while(objectives[i] < 1 || objectives[i] > 99);
   }
 
+  //getting the ammount of permited moves
   do{
     printf("Moves (1-99): ");
     fgets(buffer, STRING_SIZE, stdin);
@@ -273,6 +358,7 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
     buffer[0] = '\0';
   }while(*moves < 1 || *moves > 99);
 
+  //getting the player's name
   do{
     printf("Player name (8 characters max.): ");
     fgets(name, 50, stdin);
@@ -283,17 +369,24 @@ void gameConfig(int* cols, int* lines, int* colorNum, int objectives[MAX_COLORS]
 
 /*
   newGame: Generates a new, random board, and resets the game parameters to those input initially
+  PARAMETERS:
+    board: The game board
+    cols: Number of columns
+    lines: Number of lines
+    colorNum: Number of colors
+    objectives: Array which stores the initially input target score
+    currObjectives: The user's current score for each dot (same format as the above array)
+    moves: The number of allowed moves input initially
+    currMoves: The user's current moves
 */
 
 void newGame (int board[][MAX_BOARD_POS], int cols, int lines, int colorNum, int objectives[MAX_COLORS], int currObjectives[MAX_COLORS],
               int moves, int* currMoves){
 
   //generating random entries for each of the board's indexes
-  for (int i = 0; i < cols; i++) {
-    for (int j = 0; j < lines; j++) {
+  for (int i = 0; i < cols; i++)
+    for (int j = 0; j < lines; j++)
       board[i][j] = getRandom(colorNum);
-    }
-  }
 
   //resetting the game parameters to match those input at the beggining
   for (int i = 0; i < MAX_COLORS; i++)
@@ -408,14 +501,17 @@ void boardClear (int board[][MAX_BOARD_POS], int selBoard[][MAX_BOARD_POS], int 
                  int x, int y, int currObjectives[MAX_COLORS]){
 
   //counters for use when clearing the square's interior
-  int up = 0;
-  int down = y;
+  int up = 0, down = y;
+  int left = 0, right = x;
+
+  //auxiliary array to store the dots inside squares which will be deleted
+  int auxBoard[MAX_BOARD_POS][MAX_BOARD_POS] = {{0}};
 
   //if (not a square)
   if (valid == 5)
     for (int i = 0; i < currCount; i++){
       //'board' stores the value of the color on each square
-      //using it's index value we decrement the objective of the color we are deleting
+      //using its index value we decrement the objective of the color we are deleting
       currObjectives[ board[ selBoard2[0][i] ][ selBoard2[1][i] ] ]--;
       board[selBoard2[0][i]][selBoard2[1][i]] = -1;
     }
@@ -424,8 +520,10 @@ void boardClear (int board[][MAX_BOARD_POS], int selBoard[][MAX_BOARD_POS], int 
   if (valid != 5){
     for (int i = 0; i < x; i++)
       for (int j = 0; j < y; j++)
+        //if (it is the dot same color as the one we are deleting)
         if (board[i][j] == valid){
           currObjectives[board[i][j]]--;
+          //deletes the dot
           board[i][j] = -1;
         }
 
@@ -440,17 +538,48 @@ void boardClear (int board[][MAX_BOARD_POS], int selBoard[][MAX_BOARD_POS], int 
 
       // if (there is still some space between the boundaries)
       //(which means there is an interior to the square, and both boundaries aren't, for example, the same horizontal line)
-      //cycles from the upper to the lower boundaries, deleting everything in its path
+      //cycles from the upper to the lower boundaries, marking the dots for deletion (they first need to be compared, howerver)
       while (up < down){
-        if (board[i][up] != -1){
-          currObjectives[board[i][up]]--;
-          board[i][up] = -1;
-        }
+        auxBoard[i][up] += 1;
         up++;
       }
       up = 0;
       down = y;
     }
+
+    //cycles through the lines
+    for (int i = 0; i < y; i++){
+      //cycles right from the left side of the board until the square's left boundary is reached
+      while (selBoard[i][left] != 1 && left < x)
+        left++;
+      //cycles left from the right side of the board until the square's right boundary is reached
+      while (selBoard[i][right] != 1 && right > 0)
+        right--;
+
+      // while (there is still some space between the boundaries)
+      //cycles from the upper to the lower boundaries, marking the dots for deletion
+      while (left < right){
+        auxBoard[i][left] += 1;
+        left++;
+      }
+      left = 0;
+      right = x;
+    }
+
+    //checking the result from the last two processes, which consisted of a two step verification for the existence of squares
+    //the dot is only deleted if the vertical and horizontal checkers BOTH mark it for deletion
+    //this method prevents some possible bugs if the user made some complicated plays
+    //it can still be "tricked", but only if the user makes admitedly extremely impractical plays
+
+    //cycles through the collumns
+    for (int i = 0; i < x; i++)
+      //cycles through the lines
+      for (int j = 0; j < y; j++)
+        //if (both processes marked the dot for deletion)
+        if (auxBoard[i][j] == 2){
+          currObjectives[ board[i][j] ]--;
+          board[i][j] = -1;
+        }
   }
 }
 
@@ -521,7 +650,6 @@ int shuffleVerify (int board[][MAX_BOARD_POS], int x, int y){
           ||(board[i][j] == board[i][j+1] && j != y-1)
           ||(board[i][j] == board[i][j-1] && j != 0) )
             {
-              printf("No shuffle!\n");
               shuffle = 0;
               return shuffle;
             }
@@ -536,7 +664,7 @@ int shuffleVerify (int board[][MAX_BOARD_POS], int x, int y){
   this means every entry is shuffled at least once
 */
 
-void boardShuffle(int board[][MAX_BOARD_POS], int x, int y){
+void boardShuffle (int board[][MAX_BOARD_POS], int x, int y){
 
   //where we temporarily store a switched value
   int temp = 0;
@@ -552,6 +680,45 @@ void boardShuffle(int board[][MAX_BOARD_POS], int x, int y){
       board[i][j] = board[switchIndex[0]][switchIndex[1]];
       board[switchIndex[0]][switchIndex[1]] = temp;
     }
+}
+
+/*
+  gameEndVerify: Verifies if the game ended
+  returns 1 if victory, and -1 if defeat (0 if the game is still going)
+*/
+
+int gameEndVerify (int currObjectives[MAX_COLORS], int currMoves){
+
+  int objectivesFinished = 1;
+
+  for (int i = 0; i < MAX_COLORS; i++)
+    if (currObjectives[i] != 0)
+      objectivesFinished = 0;
+
+  //if we finished out objectives (this includes finishing with no moves)
+  if (objectivesFinished == 1)
+    return 1;
+
+  //if we didn't finish the objectives, and exhausted all our moves
+  if (currMoves == 0)
+    return -1;
+
+  //if we didn't finish the objectives, and still have moves left
+  return 0;
+}
+
+/*
+  scoreTrack: Keeps track of the user score, for later use when writting it to the file
+  increments the game counter
+*/
+
+void scoreTrack(int endConditions, int gameScore[][MAX_GAMES], int moves, int currMoves, int* gameCount){
+
+  gameScore[0][*gameCount] = endConditions;
+  gameScore[1][*gameCount] = (moves - currMoves);
+
+  (*gameCount)++;
+
 }
 
 /**
@@ -687,11 +854,11 @@ void filledCircleRGBA(SDL_Renderer * _renderer, int _circleX, int _circleY, int 
  * \param _ncolors number of colors
  * \param _moves number of moves remaining
  */
-void RenderStats( SDL_Renderer *_renderer, TTF_Font *_font, int currObjectives[], int colorNum, int moves)
+void RenderStats( SDL_Renderer *_renderer, TTF_Font *_font, int currObjectives[], int colorNum, int currMoves)
 {
   SDL_Color light = { 205, 205, 205, 105 };
   SDL_Color black = { 0, 0, 0, 255};
-  SDL_Rect scoreRect;
+  SDL_Rect scoreRect, movesRect;
 
   char num[STRING_SIZE] = "";
 
@@ -700,6 +867,10 @@ void RenderStats( SDL_Renderer *_renderer, TTF_Font *_font, int currObjectives[]
   scoreRect.w = RECT_W;
   scoreRect.h = RECT_H;
 
+  movesRect.x = RECT_MARGIN + (4*(RECT_MARGIN + RECT_W) ) / 2;
+  movesRect.y = 2 * RECT_MARGIN + RECT_H + 15;
+  movesRect.w = RECT_W;
+  movesRect.h = RECT_H;
   //generates one score rectangle for each color we are playing with
   for (int i = 0; i < colorNum; i++){
     //color for the rectangle
@@ -717,6 +888,14 @@ void RenderStats( SDL_Renderer *_renderer, TTF_Font *_font, int currObjectives[]
     //increments the position for the next rect to be drawn in
     scoreRect.x += RECT_MARGIN + RECT_W;
   }
+  //color for the rectangle
+  SDL_SetRenderDrawColor(_renderer, light.r, light.g, light.b, light.a);
+  //drawing the rectangle
+  SDL_RenderFillRect(_renderer, &movesRect);
+  //printing the current moves
+  sprintf(num, "%d", currMoves);
+  //rendering the moves
+  RenderText(movesRect.x + 35, movesRect.y, num, _font, &black, _renderer);
 }
 
 /*
@@ -732,11 +911,12 @@ void RenderStats( SDL_Renderer *_renderer, TTF_Font *_font, int currObjectives[]
  * \param _renderer renderer to handle all rendering in a window
  */
 int RenderTable( int _board_pos_x, int _board_pos_y, int _board_size_px[],
-        TTF_Font *_font, SDL_Surface *_img[], SDL_Renderer* _renderer )
+        TTF_Font *_font, SDL_Surface *_img[], SDL_Renderer* _renderer, int selBoard[][MAX_BOARD_POS])
 {
     SDL_Color black = { 0, 0, 0 }; // black
     SDL_Color light = { 205, 205, 205 };
     SDL_Color dark = { 120, 110, 102 };
+    SDL_Color highlight = { 61, 61, 61 };
     SDL_Texture *table_texture;
     SDL_Rect tableSrc, tableDest, board, board_square;
     int height, board_size, square_size_px, max_pos;
@@ -790,11 +970,16 @@ int RenderTable( int _board_pos_x, int _board_pos_y, int _board_size_px[],
     {
         for ( int j = 0; j < _board_pos_y; j++ )
         {
+            //if (the square corresponds to a selected point)
+            if (selBoard[i][j] == 1)
+              //change the square's color to highlight the move
+              SDL_SetRenderDrawColor(_renderer, highlight.r, highlight.g, highlight.b, highlight.a);
             board_square.x = board.x + (i+1)*SQUARE_SEPARATOR + i*square_size_px;
             board_square.y = board.y + (j+1)*SQUARE_SEPARATOR + j*square_size_px;
             board_square.w = square_size_px;
             board_square.h = square_size_px;
             SDL_RenderFillRect(_renderer, &board_square);
+            SDL_SetRenderDrawColor(_renderer, light.r, light.g, light.b, light.a );
         }
     }
 
@@ -802,6 +987,46 @@ int RenderTable( int _board_pos_x, int _board_pos_y, int _board_size_px[],
     SDL_DestroyTexture(table_texture);
     // return for later use
     return square_size_px;
+}
+
+/*
+  RenderGameInfo: Renders the 3 game info displays
+  victory, defeat or shuffle, depending endConditions and shuffle
+*/
+
+void RenderGameInfo(SDL_Renderer* renderer, int endConditions, SDL_Surface* imgs[]){
+
+  SDL_Texture *info;
+  SDL_Rect boardPos;
+
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+  //space occupied by the image
+  boardPos.x = 185;
+  boardPos.y = 250;
+  boardPos.w = imgs[2]->w;
+  boardPos.h = imgs[2]->h;
+
+  //render one of the images
+  if (endConditions == 1){
+    //victory
+    info = SDL_CreateTextureFromSurface(renderer, imgs[2]);
+    SDL_RenderCopy(renderer, info, NULL, &boardPos);
+  }
+  else if (endConditions == -1){
+    //defeat
+    info = SDL_CreateTextureFromSurface(renderer, imgs[3]);
+    SDL_RenderCopy(renderer, info, NULL, &boardPos);
+  }
+  else{
+    //shuffle
+    info = SDL_CreateTextureFromSurface(renderer, imgs[4]);
+    SDL_RenderCopy(renderer, info, NULL, &boardPos);
+  }
+
+  //destroy the texture
+  SDL_DestroyTexture(info);
+
 }
 
 /**
@@ -898,6 +1123,31 @@ void InitEverything(int width, int height, TTF_Font **_font, SDL_Surface *_img[]
         printf("Unable to load bitmap: %s\n", SDL_GetError());
         exit(EXIT_FAILURE);
     }
+
+    // load victory screen
+    _img[2] = IMG_Load("VICTORY.png");
+    if (_img[2] == NULL)
+    {
+        printf("Unable to load png: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    //load defeat screen
+    _img[3] = IMG_Load("DEFEAT.png");
+    if (_img[3] == NULL)
+    {
+        printf("Unable to load png: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    //load shuffle screen
+    _img[4] = IMG_Load("SHUFFLE.png");
+    if (_img[4] == NULL)
+    {
+        printf("Unable to load png: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
     // this opens (loads) a font file and sets a size
     *_font = TTF_OpenFont("FreeSerif.ttf", 16);
     if(!*_font)
@@ -983,4 +1233,32 @@ SDL_Renderer* CreateRenderer(int width, int height, SDL_Window *_window)
     SDL_RenderSetLogicalSize( renderer, width, height );
 
     return renderer;
+}
+
+/*
+  filePrint: Prints the user statistics to the file at the end of the game
+*/
+void filePrint(int gameScore[][MAX_GAMES], int gameCount, FILE* stats, char name[STRING_SIZE]){
+
+  //cutting the 'new line' character from the string
+  name = strtok(name, "\n");
+  int wins = 0;
+  int losses = 0;
+
+  for (int i = 0; i < gameCount; i++){
+    if (gameScore[0][i] == 1)
+      wins++;
+    else
+      losses++;
+  }
+
+  fprintf(stats, "Game statistics for user %s:\n\n", name);
+  fprintf(stats, "Number of games: %d games, %d wins and %d losses\n", gameCount, wins, losses);
+
+  for (int i = 0; i < gameCount; i++){
+    if (gameScore[0][i] == 1)
+      fprintf(stats, "Game %d: Win  | Moves used: %d \n", i + 1, gameScore[1][i]);
+    else
+      fprintf(stats, "Game %d: Loss \n", i + 1);
+  }
 }

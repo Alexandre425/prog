@@ -1,0 +1,4 @@
+Game statistics for user 99:
+
+Number of games: 1 games, 1 wins and 0 losses
+Game 1: Win  | Moves used: 36 
