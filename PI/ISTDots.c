@@ -1,3 +1,8 @@
+//#################################################//
+//#################################################//
+
+
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -68,6 +73,10 @@ int shuffleVerify(int[][MAX_BOARD_POS], int, int);
 void boardShuffle(int[][MAX_BOARD_POS], int, int);
 //Verifies if the game has ended
 int gameEndVerify(int[MAX_COLORS], int);
+//Saves the current game state
+void saveGameState(int[][MAX_BOARD_POS], int[][MAX_BOARD_POS], int[MAX_COLORS], int [MAX_COLORS], int, int);
+//Restores the last game state
+void restoreGameState(int[][MAX_BOARD_POS], int[][MAX_BOARD_POS], int[MAX_COLORS], int [MAX_COLORS], int, int, int*);
 //Keeps track of the user's score
 void scoreTrack(int, int[][MAX_GAMES], int, int, int*);
 //Makes the file with the user's score
@@ -101,10 +110,10 @@ int main( void )
 
     // Declaration of variables related to functionality
     //boards which store the player's selection
-      //stores '1' in all the selected positions (useful for clearing the inside of squares)
-      int selBoard[MAX_BOARD_POS][MAX_BOARD_POS] = {{0}};
-      //stores the x and y coordinates of selected board entries (useful for checking the existence of squares)
-      int selBoard2[2][MAX_SELBOARD_POS] = {{-1}};
+    //stores '1' in all the selected positions (useful for clearing the inside of squares)
+    int selBoard[MAX_BOARD_POS][MAX_BOARD_POS] = {{0}};
+    //stores the x and y coordinates of selected board entries (useful for checking the existence of squares)
+    int selBoard2[2][MAX_SELBOARD_POS] = {{-1}};
     //parameters to configure the game
     int colorNum = 0;
     int objectives[MAX_COLORS] = {0};
@@ -119,20 +128,31 @@ int main( void )
     //parameters to update as the game progresses
     int currObjectives[MAX_COLORS] = {0};
     int currMoves = 0;
+    //these save the last game state
+    int boardSave[MAX_BOARD_POS][MAX_BOARD_POS] = {{0}};
+    int currObjectivesSave[MAX_COLORS] = {0};
+    //stores one if the last move was reverted
+    int undidLast = 0;
     //global parameters across all games
       //number of games
       int gameCount = 0;
       //[0] stores 1 if victory, 0 if defeat. [1] stores number of used moves if victory
       int gameScore[2][MAX_GAMES] = {{0}};
+      //stores -1 if the current game ended in a loss, and 1 if in a victory
       int endConditions = 0;
+      //stores 1 if the board needs shuffling
       int shuffle = 0;
     //time to hold the info on screen for
     int sleep = 0;
+    //the file to which we will be writting the game statistics
     FILE *stats = NULL;
+    //stores 1 if a play was made which changed the board, requiring the game to check for shuffles or game ends
+    int gameUpdate = 0;
+
 
 
     //random num gen initialization
-    srand(time(NULL));
+    srand(1234);
 
     //Gather the game parameters and ready them before display
     gameConfig(&board_pos_x, &board_pos_y, &colorNum, objectives, &moves, name);
@@ -166,6 +186,7 @@ int main( void )
                 {
                     case SDLK_n:
                         printf("Game end!\n");
+                        //registers a loss
                         scoreTrack(-1, gameScore, moves, currMoves, &gameCount);
                         newGame(board, board_pos_x, board_pos_y, colorNum, objectives, currObjectives, moves, &currMoves);
                           break;
@@ -173,7 +194,12 @@ int main( void )
                         quit = 1;
                           break;
                     case SDLK_u:
-                        // todo
+                        //only undoes the last move if we have made a move
+                        if (currMoves != moves && undidLast == 0){
+                          restoreGameState(board, boardSave, currObjectives, currObjectivesSave, board_pos_x, board_pos_y, &currMoves);
+                          //signals we can't undo next turn again
+                          undidLast = 1;
+                        }
                           break;
                     default:
                           break;
@@ -194,10 +220,14 @@ int main( void )
                 //checking to see if the play was valid and legal
                 valid = inputVerify(board, selBoard2, currCount);
                 if (valid != -1){
-                  //clearing the board and such
+                  //saves the state of the game before altering anything
+                  saveGameState(board, boardSave, currObjectives, currObjectivesSave, board_pos_x, board_pos_y);
+                  //clearing the board and updating the score, readying it for the next move
                   boardClear(board, selBoard, selBoard2, valid, currCount, board_pos_x, board_pos_y, currObjectives);
                   boardDown(board, board_pos_x, board_pos_y, colorNum);
                   currMoves--;
+                  undidLast = 0;
+                  gameUpdate = 1;
                 }
 
                 //clearing the user input arrays
@@ -221,18 +251,35 @@ int main( void )
         // render board
         RenderPoints(board, board_pos_x, board_pos_y, board_size_px, square_size_px, renderer);
 
-        // checking to see if the board needs shuffling, then shuffling it if so
-        shuffle = shuffleVerify(board, board_pos_x, board_pos_y);
-        if (shuffle == 1)
-        boardShuffle(board, board_pos_x, board_pos_y);
+        if (gameUpdate == 1){
+
+          // checking to see if the board needs shuffling, then shuffling it if so
+          shuffle = shuffleVerify(board, board_pos_x, board_pos_y);
+          if (shuffle == 1)
+            boardShuffle(board, board_pos_x, board_pos_y);
 
 
-        // -1 if defeat, 1 if victory, 0 if the game keeps going
-        endConditions = gameEndVerify(currObjectives, currMoves);
-        if (endConditions != 0){
-          printf("Game end!\n");
-          scoreTrack(endConditions, gameScore, moves, currMoves, &gameCount);
-          newGame(board, board_pos_x, board_pos_y, colorNum, objectives, currObjectives, moves, &currMoves);
+          // -1 if defeat, 1 if victory, 0 if the game keeps going
+          endConditions = gameEndVerify(currObjectives, currMoves);
+          if (endConditions != 0){
+            printf("Game end!\n");
+            scoreTrack(endConditions, gameScore, moves, currMoves, &gameCount);
+            newGame(board, board_pos_x, board_pos_y, colorNum, objectives, currObjectives, moves, &currMoves);
+          }
+
+          //renders the game information about an event
+          //if endConditions is 1, VICTORY is displayed, if it is -1, DEFEAT is displayed
+          //if it is at zero, and the function still gets run, it means we are shuffling
+          if (endConditions != 0 || shuffle == 1){
+            printf("Game info!\n");
+            RenderGameInfo(renderer, endConditions, imgs);
+            sleep = 2000;
+          }
+
+          endConditions = 0;
+          shuffle = 0;
+          gameUpdate = 0;
+
         }
 
         // zeroes out currObjectives' indexes if they are negative
@@ -243,14 +290,6 @@ int main( void )
         // render score
         RenderStats(renderer, bigSerif, currObjectives, colorNum, currMoves);
 
-        //renders the game information about an event
-        //if endConditions is 1, VICTORY is displayed, if it is -1, DEFEAT is displayed
-        //if it is at zero, and the function still gets run, it means we are shuffling
-        if (endConditions != 0 || shuffle == 1){
-          printf("Game info!\n");
-          RenderGameInfo(renderer, endConditions, imgs);
-          sleep = 2000;
-        }
 
         // render in the screen all changes above
         SDL_RenderPresent(renderer);
@@ -277,7 +316,7 @@ int main( void )
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    stats = fopen("game_statistics.txt", "w");
+    stats = fopen("stats.txt", "a");
 
     if (stats == NULL){
       printf("ERROR! Could not open file!\n");
@@ -569,16 +608,17 @@ void boardClear (int board[][MAX_BOARD_POS], int selBoard[][MAX_BOARD_POS], int 
     //checking the result from the last two processes, which consisted of a two step verification for the existence of squares
     //the dot is only deleted if the vertical and horizontal checkers BOTH mark it for deletion
     //this method prevents some possible bugs if the user made some complicated plays
-    //it can still be "tricked", but only if the user makes admitedly extremely impractical plays
+    //admitedly, it can still be "tricked", but only if the user makes extremely impractical plays
 
     //cycles through the collumns
     for (int i = 0; i < x; i++)
       //cycles through the lines
       for (int j = 0; j < y; j++)
         //if (both processes marked the dot for deletion)
-        if (auxBoard[i][j] == 2){
-          currObjectives[ board[i][j] ]--;
-          board[i][j] = -1;
+        if (auxBoard[i][j] == 2)
+          if (board[i][j] != -1){
+            currObjectives[ board[i][j] ]--;
+            board[i][j] = -1;
         }
   }
 }
@@ -629,6 +669,45 @@ void boardDown (int board[][MAX_BOARD_POS], int x, int y, int colorNum){
     emptyCount = 0;
   }
 }
+
+/*
+  saveGameState: Saves the current state of the game, for it to possible be restored
+*/
+
+void saveGameState(int board[][MAX_BOARD_POS], int boardSave[][MAX_BOARD_POS], int currObjectives[MAX_COLORS],
+   int currObjectivesSave[MAX_COLORS], int x, int y){
+
+  //saving the game board
+  for (int i = 0; i < x; i++)
+    for (int j = 0; j < y; j++)
+      boardSave[i][j] = board[i][j];
+
+  //saving the score
+  for (int i = 0; i < MAX_COLORS; i++)
+    currObjectivesSave[i] = currObjectives[i];
+
+}
+
+/*
+  restoreGameState: Restores the state of the game before the last move
+*/
+
+void restoreGameState(int board[][MAX_BOARD_POS], int boardSave[][MAX_BOARD_POS], int currObjectives[MAX_COLORS],
+   int currObjectivesSave[MAX_COLORS], int x, int y, int* currMoves){
+
+  //restoring the game board
+  for (int i = 0; i < x; i++)
+    for (int j = 0; j < y; j++)
+      board[i][j] = boardSave[i][j];
+
+  //restoring the score
+  for (int i = 0; i < MAX_COLORS; i++)
+    currObjectives[i] = currObjectivesSave[i];
+
+  //restoring the current moves left
+  (*currMoves)++;
+
+  }
 
 /*
   shuffleVerify: verifies is there is any possible play by the user left
@@ -692,7 +771,7 @@ int gameEndVerify (int currObjectives[MAX_COLORS], int currMoves){
   int objectivesFinished = 1;
 
   for (int i = 0; i < MAX_COLORS; i++)
-    if (currObjectives[i] != 0)
+    if (currObjectives[i] > 0)
       objectivesFinished = 0;
 
   //if we finished out objectives (this includes finishing with no moves)
@@ -1260,5 +1339,7 @@ void filePrint(int gameScore[][MAX_GAMES], int gameCount, FILE* stats, char name
       fprintf(stats, "Game %d: Win  | Moves used: %d \n", i + 1, gameScore[1][i]);
     else
       fprintf(stats, "Game %d: Loss \n", i + 1);
+
   }
+  fprintf(stats, "\n___________________________________________________________\n\n" );
 }
