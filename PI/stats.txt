@@ -1,14 +1,5 @@
-Game statistics for user 5:
+Game statistics for user 88:
 
-Number of games: 4 games, 0 wins and 4 losses
+Number of games: 2 games, 0 wins and 2 losses
 Game 1: Loss 
 Game 2: Loss 
-Game 3: Loss 
-Game 4: Loss 
-
-___________________________________________________________
-Game statistics for user 5:
-
-Number of games: 0 games, 0 wins and 0 losses
-
-___________________________________________________________
