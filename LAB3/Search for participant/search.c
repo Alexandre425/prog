@@ -25,12 +25,14 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  strcpy(name, argv[2]);
-  for (i = 3; i < argc; i++){
-    strcat(name, " ");
-    strcat(name, argv[i]);
+  //gets the intire name of the runner
+  strcpy(name, argv[2]);        //gets the first name
+  for (i = 3; i < argc; i++){   //for every other name
+    strcat(name, " ");          //concates a space
+    strcat(name, argv[i]);      //and the other name
   }
 
+  //searches for the mane os the runner and prints his/her positions
   while ( fgets(temp, STRING_SIZE, initial) != NULL )
     if (strstr(temp, name) != NULL){
       printf("-------Participant %s-------\n", name);

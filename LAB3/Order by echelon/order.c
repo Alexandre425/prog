@@ -43,23 +43,27 @@ int main (void){
   return EXIT_SUCCESS;
 }
 
+//readFile: reads the file  and reallocs the memmory
 void readFile(FILE* initial, char* lines[FILE_SIZE]){
 
   int size = STRING_INC_AMOUNT;
   char c = 0;
-  int l = 0, p = 0;
+  int l = 0, p = 0; //line and position along the line
 
+//Runs the file line by line until EOF
   while (fgetc(initial) != '\n');
 
   while ( (c = fgetc(initial)) != EOF){
 
     lines[l][p++] = c;
 
+    //if current position is the same as current size, increases the size by 10
     if (p == size){
       size = size + STRING_INC_AMOUNT;
       lines[l] = (char*)realloc(lines[l], sizeof(char) * size);
     }
 
+    //at the end of the current line: increment line, reset position
     if (c == '\n' && l != FILE_SIZE - 1){
       l++;
       size = STRING_INC_AMOUNT;
@@ -69,10 +73,12 @@ void readFile(FILE* initial, char* lines[FILE_SIZE]){
   }
 }
 
+//orderFile: the file is ordered by echelons
 void orderFile(char* lines[FILE_SIZE], char* linesOut[FILE_SIZE]){
 
   int ech = 0, l = 0, k = 0;
 
+  //string that contains all echelons
   char echelon[ECHELONS][CHARS] = {
     "F20",
     "F40",
@@ -86,15 +92,16 @@ void orderFile(char* lines[FILE_SIZE], char* linesOut[FILE_SIZE]){
     "M60"
   };
 
-  for (ech = 0; ech < ECHELONS; ech++)
-    for (l = 0; l < FILE_SIZE; l++)
-      if ( strstr(lines[l], echelon[ech]) != NULL ){
-        linesOut[k] = (char*)realloc(lines[l], strlen(lines[l]) * sizeof(char));
+  for (ech = 0; ech < ECHELONS; ech++)                                              //for each echelon
+    for (l = 0; l < FILE_SIZE; l++)                                                 //for every file line
+      if ( strstr(lines[l], echelon[ech]) != NULL ){                                //searches for a word (echelon) in a line
+        linesOut[k] = (char*)realloc(lines[l], strlen(lines[l]) * sizeof(char));    //copies the intire line to a new file
         printf("%s", linesOut[k]);
         k++;
       }
 }
 
+//printFile: prints the file
 void printFile(FILE* final, char** linesOut){
 
 int i = 0;
