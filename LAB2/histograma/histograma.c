@@ -37,7 +37,7 @@ int main(void){
     scanf("%d %d", &quant, &intervals);
   }
 
-  //geração do veor aleatório
+  //geração do vetor aleatório
   vecGenerate(quant, vec);
 
   //determinação do maior e menor valor do vetor gerado

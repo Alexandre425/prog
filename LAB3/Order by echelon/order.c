@@ -50,21 +50,22 @@ void readFile(FILE* initial, char* lines[FILE_SIZE]){
   char c = 0;
   int l = 0, p = 0; //line and position along the line
 
-//Runs the file line by line until EOF
   while (fgetc(initial) != '\n');
 
+  //Runs the file line by line until EOF
   while ( (c = fgetc(initial)) != EOF){
 
     lines[l][p++] = c;
 
     //if current position is the same as current size, increases the size by 10
-    if (p == size){
+    if (p == size - 2){
       size = size + STRING_INC_AMOUNT;
       lines[l] = (char*)realloc(lines[l], sizeof(char) * size);
     }
 
     //at the end of the current line: increment line, reset position
     if (c == '\n' && l != FILE_SIZE - 1){
+      lines[l][p] = '\0';
       l++;
       size = STRING_INC_AMOUNT;
       lines[l] = (char*)realloc(lines[l], sizeof(char) * size);
