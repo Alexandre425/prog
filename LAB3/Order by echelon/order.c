@@ -2,25 +2,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FILE_SIZE 140
 #define STRING_INC_AMOUNT 10
 #define ECHELONS 10
 #define CHARS 4
 
-void readFile(FILE*, char**);
+void readFile(FILE*, char**, int*);
 
-void orderFile(char**, char**);
+void orderFile(char**, char**, int);
 
-void printFile(FILE*, char**);
+void printFile(FILE*, char**, int);
 
 int main (void){
 
   FILE* initial = NULL;
   FILE* final = NULL;
-  char* lines[FILE_SIZE] = {NULL};
-  char* linesOut[FILE_SIZE] = {NULL};
+  char** lines = {NULL};
+  char** linesOut = {NULL};
 
-  int i = 0;
+  int i = 0, l = 0;
 
   initial = fopen("braga17.txt", "r");
   final = fopen("braga17_out.txt", "w");
@@ -32,11 +31,9 @@ int main (void){
 
   lines[0] = (char*)realloc(NULL, sizeof(char) * STRING_INC_AMOUNT);
 
-  readFile(initial, lines);
-
-  orderFile(lines, linesOut);
-
-  printFile(final, linesOut);
+  readFile(initial, lines, &l);
+  orderFile(lines, linesOut, l);
+  printFile(final, linesOut, l);
 
   fclose(initial);
   fclose(final);
@@ -44,37 +41,37 @@ int main (void){
 }
 
 //readFile: reads the file  and reallocs the memmory
-void readFile(FILE* initial, char* lines[FILE_SIZE]){
+void readFile(FILE* initial, char** lines, int* l){
 
   int size = STRING_INC_AMOUNT;
   char c = 0;
-  int l = 0, p = 0; //line and position along the line
+  int p = 0; //line and position along the line
 
 //Runs the file line by line until EOF
   while (fgetc(initial) != '\n');
 
   while ( (c = fgetc(initial)) != EOF){
 
-    lines[l][p++] = c;
+    lines[*l][p++] = c;
 
     //if current position is the same as current size, increases the size by 10
     if (p == size){
       size = size + STRING_INC_AMOUNT;
-      lines[l] = (char*)realloc(lines[l], sizeof(char) * size);
+      lines[*l] = (char*)realloc(lines[*l], sizeof(char) * size);
     }
 
     //at the end of the current line: increment line, reset position
-    if (c == '\n' && l != FILE_SIZE - 1){
-      l++;
+    if (c == '\n'){
+      (*l)++;
       size = STRING_INC_AMOUNT;
-      lines[l] = (char*)realloc(lines[l], sizeof(char) * size);
+      lines[*l] = (char*)realloc(lines[*l], sizeof(char) * size);
       p = 0;
     }
   }
 }
 
 //orderFile: the file is ordered by echelons
-void orderFile(char* lines[FILE_SIZE], char* linesOut[FILE_SIZE]){
+void orderFile(char** lines, char** linesOut, int maxLines){
 
   int ech = 0, l = 0, k = 0;
 
@@ -93,18 +90,18 @@ void orderFile(char* lines[FILE_SIZE], char* linesOut[FILE_SIZE]){
   };
 
   for (ech = 0; ech < ECHELONS; ech++)                                              //for each echelon
-    for (l = 0; l < FILE_SIZE; l++)                                                 //for every file line
+    for (l = 0; l < maxLines; l++)                                                  //for every file line
       if ( strstr(lines[l], echelon[ech]) != NULL ){                                //searches for a word (echelon) in a line
-        linesOut[k] = (char*)realloc(lines[l], strlen(lines[l]) * sizeof(char));    //copies the intire line to a new file
+        linesOut[k] = (char*)realloc(lines[l], strlen(lines[l]) * sizeof(char));    //copies the entire line to a new file
         printf("%s", linesOut[k]);
         k++;
       }
 }
 
 //printFile: prints the file
-void printFile(FILE* final, char** linesOut){
+void printFile(FILE* final, char** linesOut, int maxLines){
 
 int i = 0;
-for (i = 0; i < FILE_SIZE; i++)
+for (i = 0; i < maxLines; i++)
   fprintf(final, "%s", linesOut[i]);
 }
