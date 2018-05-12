@@ -26,6 +26,10 @@ Point* readPoints(int *n){
 
   // Allocates memmory for all points
   Point* pointList = (Point*)malloc(*n * sizeof(Point));
+  if (pointList == NULL){
+    printf("Error while allocating memmory!\n" );
+    exit (EXIT_FAILURE);
+  }
 
   //Asks for n point coordinates
   printf("Note: insert the coordinates in the 'x,y' format\n");
