@@ -66,24 +66,32 @@ ListInfo GetFileInfo(FILE*);
 
 //allocates memory for the auxiliary array of pointers to nodes
 //from the lists
+//returns the pointer to the allocated array
 //1. range - year range of the file
 node_t** allocateAuxArray(int);
 
 //creates a sorted copy of the data files in memory
 //1. *countriesFile - the file pointer to the country file
-//2. countriesHead - the head of the country list
-//3. countriesYearArray - the auxiliary year array of pointers
+//2. **countriesHead - the head of the country list
+//3. **countriesYearArray - the auxiliary year array of pointers
 //4. *citiesFile - the file pointer to the cities file
-//5. citiesHead - the head of the city list
-//6. citiesYearArray - the auxiliary year array of pointers
-createSortedLists(FILE*, node_t*, node_t**, FILE*, node_t*, node_t*);
+//5. **citiesHead - the head of the city list
+//6. **citiesYearArray - the auxiliary year array of pointers
+void createSortedLists(FILE*, node_t**, node_t**, FILE*, node_t**, node_t**);
+
+//frees the sorted copies of the data files in memory
+//returns the new head (which will be NULL)
+//1. *head - the head of the list to be freed
+node_t* freeSortedList(node_t*);
 
 //allocates memory for a new list node
+//returns the pointer to the new node
 //1. data - data1 struct. Described in 'struct.h'
 //2. pos - data2 struct. Described in 'struct.h'
-node_t* getNewNode(data1, data2);
+node_t* getNewNode(temp, data2);
 
 //does a sorted insertion of a new list node
+//returns the head pointer of the list
 //1. head - the list head
 //2. ptrArray - the array of year pointers
 //3. newNode - the new node to be inserted

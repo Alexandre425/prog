@@ -4,6 +4,8 @@
 #include "struct.h"
 #include "define.h"
 
+extern int minYear;
+
 int readArguments(int argc, char const *argv[], char fileNames[2][FILE_NAME_SIZE]){
 
   int mode = -1;

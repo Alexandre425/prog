@@ -4,6 +4,8 @@
 #include "struct.h"
 #include "define.h"
 
+extern int minYear;
+
 void textualMode(FILE* countriesFile, FILE* citiesFile){
 
   //information structs about the lists
@@ -26,11 +28,15 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   minYear = countriesInfo.minYear;
 
   //allocating the auxiliary pointer arrays
-  countriesYearArray = textual_allocateAuxArray(countriesInfo.range);
-  citiesYearArray = textual_allocateAuxArray(citiesInfo.range);
+  countriesYearArray = allocateAuxArray(countriesInfo.range);
+  citiesYearArray = allocateAuxArray(citiesInfo.range);
 
-  textual_createSortedLists(countriesFile, countriesHead, countriesYearArray, citiesFile, citiesHead, citiesYearArray);
+  //creating both sorted lists
+  createSortedLists(countriesFile, &countriesHead, countriesYearArray, citiesFile, &citiesHead, citiesYearArray);
 
+  //freeing all memory still in use
+  countriesHead = freeSortedList(countriesHead);
+  citiesHead = freeSortedList(citiesHead);
   free(countriesYearArray);
   free(citiesYearArray);
 }

@@ -1,3 +1,10 @@
+typedef struct temp{
+  int year;
+  int month;
+  float temp;
+  char name[50];
+} temp;
+
 typedef struct data1{
   int year;
   int month;
@@ -6,8 +13,10 @@ typedef struct data1{
 } data1;
 
 typedef struct data2{
-  float latitude;
-  float longitude;
+  float lat;
+  char cLat;
+  float lon;
+  char cLon;
 } data2;
 
 //used for cities and countries
