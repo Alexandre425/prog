@@ -1,22 +1,23 @@
-typedef struct Country{
+typedef struct data1{
   int year;
   int month;
   float temp;
   char* name;
-  struct Country* next;
-  struct Country* prev;
-} Country;
+} data1;
 
-typedef struct City{
-  int year;
-  int month;
-  float temp;
-  char* name;
+typedef struct data2{
   float latitude;
   float longitude;
-  struct City* next;
-  struct City* prev;
-} City;
+} data2;
+
+//used for cities and countries
+typedef struct node{
+  data1 data;
+  data2 pos;
+
+  struct node* next;
+  struct node* prev;
+} node_t;
 
 typedef struct{
   int maxYear;

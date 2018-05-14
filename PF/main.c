@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#include "define.h"
 #include "struct.h"
+#include "define.h"
+
+//first year of measurement, to help calculate the auxiliary pointer array index
+int minYear = 0;
 
 int main(int argc, char const *argv[]) {
 
@@ -18,10 +21,10 @@ int main(int argc, char const *argv[]) {
 
   openFiles(mode, fileNames, &countriesFile, &citiesFile);
 
-  if (mode == 0);
-    textualMode();
+  if (mode == 0)
+    textualMode(countriesFile, citiesFile);
   else
-    visualMode();
+    visualMode(citiesFile);
 
   closeFiles(countriesFile, citiesFile);
   return EXIT_SUCCESS;

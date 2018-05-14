@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "define.h"
 #include "struct.h"
+#include "define.h"
 
 int readArguments(int argc, char const *argv[], char fileNames[2][FILE_NAME_SIZE]){
 
@@ -52,7 +52,7 @@ void openFiles(int mode, char fileNames[2][FILE_NAME_SIZE], FILE** countriesFile
       exit (EXIT_FAILURE);
     }
   }
-  
+
   //always open the cities file
   *citiesFile = fopen(fileNames[1], "r");
   if (*citiesFile == NULL){
