@@ -2,6 +2,7 @@
 #define BUFFER_SIZE 100
 #define COUNTRY 0
 #define CITY 1
+#define true 1
 
 //############################################################
 //DECLARATION OF THE MODE FUNCTIONS
@@ -101,3 +102,71 @@ node_t* sortedInsert(node_t*, node_t**, node_t*);
 //the year of the new list entry
 //1. data - data1 struct, containing the year
 int findIndex(data1);
+
+//############################################################
+//DECLARATION OF MENU FUNCTIONS
+//
+//functions present in 'menuFunctions'
+//used for user interaction, all of them being connected by
+//'mainMenu'.
+//############################################################
+
+//the main menu, accesses all the other 4 menus
+//1. countriesHead - the head of the country lists
+//2. citiesHead - the head of the city list
+void mainMenu(node_t*, node_t*);
+
+//the data filtering menu, allows the user to narrow the data
+//1. countriesHead - the head of the country lists
+//2. citiesHead - the head of the city list
+//3. filtCountriesHead - the head of the filtered country list
+//4. filtCitiesHead - the head of the filtered city list
+void dataFilterMenu(node_t*, node_t*, node_t**, node_t**);
+
+void initalDateFilter(node_t**, node_t**);
+void seasonFilter(node_t**, node_t**);
+void resetFilter(node_t*, node_t*, node_t**, node_t**);
+
+//the temperature history menu, allows the user to see
+//maximum, minimum and average temperatures in a periodic
+//manner, in a certain country or city, or globally
+//1. filtCountriesHead - the head of the filtered country list
+//2. filtCitiesHead - the head of the filtered city list
+void tempHistoryMenu(node_t*, node_t*);
+
+void tempHistoryGlobal(node_t*, node_t*);
+void tempHistoryCountry(node_t*, node_t*);
+void tempHistoryCity(node_t*, node_t*);
+
+//the yearly temperature analisis menu, allows the user to
+//see the hottest, coldest, and most-extreme (in terms of
+//temperature) countries or cities in a user-input year
+//1. filtCountriesHead - the head of the filtered country list
+//2. filtCitiesHead - the head of the filtered city list
+void yearlyTempMenu(node_t*, node_t*);
+
+void yearlyTempCountries(node_t*, node_t*);
+void yearlyTempCities(node_t*, node_t*);
+
+//the global temperature analisis menu, uses the moving average
+//to calculate the temperature change globally, or for a country
+//or city
+//1. filtCountriesHead - the head of the filtered country list
+//2. filtCitiesHead - the head of the filtered city list
+void globalTempMenu(node_t*, node_t*);
+
+void globalTempGlobal(node_t*, node_t*);
+void globalTempCountry(node_t*, node_t*);
+void globalTempCity(node_t*, node_t*);
+
+//gets a sampling period for the temperature history menu
+//returns the input period
+int getSamplePeriod();
+
+//gets a sample year for the yearly temperature analisis menu
+//returns the input year
+int getSampleYear();
+
+//gets the ammount of years to calculate the moving average with
+//returns the ammount of years
+int getNumYears();

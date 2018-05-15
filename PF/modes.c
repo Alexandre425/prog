@@ -34,6 +34,7 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   //creating both sorted lists
   createSortedLists(countriesFile, &countriesHead, countriesYearArray, citiesFile, &citiesHead, citiesYearArray);
 
+  mainMenu(countriesHead, citiesHead);
   //freeing all memory still in use
   countriesHead = freeSortedList(countriesHead);
   citiesHead = freeSortedList(citiesHead);

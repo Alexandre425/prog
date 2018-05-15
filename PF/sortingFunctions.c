@@ -55,8 +55,6 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   temp cmp = {0, 0, 1000.0f, "\0"};
   data2 pos = {0.0f, 0.0f};
 
-  int count1 = 0, count2 = 0;
-
   //creating the country list
   while (fgets(buffer, BUFFER_SIZE, countriesFile) != NULL){
     //resetting the buffer
@@ -67,7 +65,6 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
     if (data.temp != 1000.0f){
       newNode = getNewNode(data, pos);
       *countriesHead = sortedInsert(*countriesHead, countriesYearArray, newNode);
-      printf("%d\n", count1++);
     }
   }
   rewind(countriesFile);
@@ -84,7 +81,6 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
     if (data.temp != 1000.0f){
       newNode = getNewNode(data, pos);
       *citiesHead = sortedInsert(*citiesHead, citiesYearArray, newNode);
-      printf("%d\n", count2    ++);
     }
   }
   rewind(citiesFile);
