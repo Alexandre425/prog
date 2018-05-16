@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
+#include <unistd.h>
 #include "struct.h"
 #include "define.h"
 
 extern int minYear;
+extern int maxYear;
 
 void textualMode(FILE* countriesFile, FILE* citiesFile){
 
@@ -24,8 +26,9 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   countriesInfo = GetFileInfo(countriesFile);
   citiesInfo = GetFileInfo(citiesFile);
 
-  //setting the global variables to the minimum year in each file
+  //setting the global variables to the minimum and maximum years in each file
   minYear = countriesInfo.minYear;
+  maxYear = countriesInfo.maxYear;
 
   //allocating the auxiliary pointer arrays
   countriesYearArray = allocateAuxArray(countriesInfo.range);

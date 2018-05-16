@@ -98,6 +98,16 @@ node_t* getNewNode(temp, data2);
 //3. newNode - the new node to be inserted
 node_t* sortedInsert(node_t*, node_t**, node_t*);
 
+//deletes a node from the list
+//1. aux - pointer to the list entry before the
+//  one which will be deleted
+void deleteNode(node_t*);
+
+//deletes the list head
+//returns the new list head (the second entry)
+//1. head - the head of the list
+node_t* deleteHead(node_t*);
+
 //finds the corresponding index on the year array, based on
 //the year of the new list entry
 //1. data - data1 struct, containing the year

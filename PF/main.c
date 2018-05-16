@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
+#include <unistd.h>
 #include "struct.h"
 #include "define.h"
 
-//first year of measurement, to help calculate the auxiliary pointer array index
+//first and last years of measurement, to help calculate the auxiliary pointer array index
 int minYear = 0;
+int maxYear = 0;
 
 int main(int argc, char const *argv[]) {
 
@@ -17,6 +19,8 @@ int main(int argc, char const *argv[]) {
   //defines the mode the program will function (0 for textual, 1 for visual)
   int mode = -1;
 
+  system("clear");
+
   mode = readArguments(argc, argv, fileNames);
 
   openFiles(mode, fileNames, &countriesFile, &citiesFile);
@@ -27,5 +31,8 @@ int main(int argc, char const *argv[]) {
     visualMode(citiesFile);
 
   closeFiles(countriesFile, citiesFile);
+
+  printf("Exitting...\n");
+
   return EXIT_SUCCESS;
 }

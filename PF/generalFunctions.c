@@ -1,10 +1,12 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "struct.h"
 #include "define.h"
 
 extern int minYear;
+extern int maxYear;
 
 int readArguments(int argc, char const *argv[], char fileNames[2][FILE_NAME_SIZE]){
 
@@ -28,14 +30,10 @@ int readArguments(int argc, char const *argv[], char fileNames[2][FILE_NAME_SIZE
     }
   }
 
-  printf("%s\n", fileNames[0]);
-  printf("%s\n", fileNames[1]);
-
-
   if (mode == 0)
-    printf("Starting in text mode...\n");
+    printf("Starting in text mode\n");
   if (mode == 1)
-    printf("Starting in visual mode...\n");
+    printf("Starting in visual mode\n");
   if (mode == -1){
     printf("Mode undefined! Execute the program in one of the two modes\n");
     exit (EXIT_FAILURE);

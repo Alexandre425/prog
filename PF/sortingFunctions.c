@@ -1,10 +1,12 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "struct.h"
 #include "define.h"
 
 extern int minYear;
+extern int maxYear;
 
 ListInfo GetFileInfo(FILE* file){
 
@@ -55,6 +57,9 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   temp cmp = {0, 0, 1000.0f, "\0"};
   data2 pos = {0.0f, 0.0f};
 
+  system("clear");
+  printf("Loading files, please wait...\n");
+
   //creating the country list
   while (fgets(buffer, BUFFER_SIZE, countriesFile) != NULL){
     //resetting the buffer
@@ -89,18 +94,18 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
 
 node_t* freeSortedList(node_t* head){
 
-  //skipping first element, then freeing it
-  head = head->next;
-  free(head->prev);
-  //freeing all elements in between
-  while (head->next != NULL){
-    head = head->next;
-    free(head->prev);
-  }
-  //freeing the last element
-  free(head);
-  head = NULL;
+  node_t* aux = head;
 
+  printf("Freeing list...\n");
+
+  while (aux != NULL){
+    aux = aux->next;
+    free(head->data.name);
+    free(head);
+    head = aux;
+  }
+
+  //head will always be NULL
   return head;
 }
 
@@ -121,7 +126,6 @@ node_t* getNewNode(temp data, data2 pos){
   newNode->data.name = (char*)malloc( (strlen(data.name) + 1) * sizeof(char) );
   strcpy(newNode->data.name, data.name);
   newNode->next = NULL;
-  newNode->prev = NULL;
 
   return newNode;
 }
@@ -147,7 +151,6 @@ node_t* sortedInsert(node_t* head, node_t** ptrArray, node_t* newNode){
       (newNode->data.year == head->data.year && newNode->data.month <= head->data.month)){
 
       newNode->next = head;
-      head->prev = newNode;
       ptrArray[index] = newNode;
       return newNode;
     }
@@ -180,7 +183,6 @@ node_t* sortedInsert(node_t* head, node_t** ptrArray, node_t* newNode){
   //if the new node is being inserted at the end of the list
   if (aux->next == NULL){
     aux->next = newNode;
-    newNode->prev = aux;
     //the year pointer is set if it has not been yet
     if (ptrArray[index] == NULL)
       ptrArray[index] = newNode;
@@ -189,8 +191,6 @@ node_t* sortedInsert(node_t* head, node_t** ptrArray, node_t* newNode){
   //if it is being inserted in the middle
   else{
     newNode->next = aux->next;
-    aux->next->prev = newNode;
-    newNode->prev = aux;
     aux->next = newNode;
     //if the previous year pointer needs to be substituted, or there is none
     if (ptrArray[index] == aux->next || ptrArray[index] == NULL)
@@ -198,6 +198,33 @@ node_t* sortedInsert(node_t* head, node_t** ptrArray, node_t* newNode){
     return head;
   }
 
+}
+
+void deleteNode(node_t* aux){
+
+  node_t* tmp = NULL;
+
+  if (aux == NULL || aux->next == NULL)
+    return;
+
+  tmp = aux->next->next;
+  free(aux->next->data.name);
+  free(aux->next);
+  aux->next = tmp;
+}
+
+node_t* deleteHead(node_t* head){
+
+  node_t* newHead = NULL;
+
+  if (head == NULL)
+    return NULL;
+
+  newHead = head->next;
+  free(head->data.name);
+  free(head);
+
+  return newHead;
 }
 
 int findIndex(data1 data ){

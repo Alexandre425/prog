@@ -25,7 +25,6 @@ typedef struct node{
   data2 pos;
 
   struct node* next;
-  struct node* prev;
 } node_t;
 
 typedef struct{
