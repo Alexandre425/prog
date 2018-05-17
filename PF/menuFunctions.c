@@ -8,6 +8,9 @@
 extern int minYear;
 extern int maxYear;
 
+int filteredByInitialDate = 0;
+int filteredBySeason = 0;
+
 void mainMenu (node_t* countriesHead, node_t* citiesHead){
 
   //head pointers to the filtered lists
@@ -79,13 +82,27 @@ void dataFilterMenu (node_t* countriesHead, node_t* citiesHead, node_t** filtCou
 
     switch (c) {
       case '1':
-        initalDateFilter (filtCountriesHead, filtCitiesHead);
+        if (filteredByInitialDate == 0)
+          initalDateFilter (filtCountriesHead, filtCitiesHead);
+        else{
+          printf("Already filtered! To change the filters, reset them first\n");
+          sleep(3);
+        }
+        filteredByInitialDate = 1;
         break;
       case '2':
-        seasonFilter (filtCountriesHead, filtCitiesHead);
+        if (filteredBySeason == 0)
+          seasonFilter (filtCountriesHead, filtCitiesHead);
+        else{
+          printf("Already filtered! To change the filters, reset them first\n");
+          sleep(3);
+        }
+          filteredBySeason = 1;
         break;
       case '3':
         resetFilter (countriesHead, citiesHead, filtCountriesHead, filtCitiesHead);
+        filteredBySeason = 0;
+        filteredByInitialDate = 0;
         break;
       case '4':
         return;
@@ -141,13 +158,13 @@ void tempHistoryMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
     switch (c) {
       case '1':
-        tempHistoryGlobal (filtCountriesHead, filtCitiesHead);
+        tempHistoryGlobal (filtCountriesHead, samplePeriod);
         break;
       case '2':
-        tempHistoryCountry (filtCountriesHead, filtCitiesHead);
+        tempHistoryCountry (filtCountriesHead, samplePeriod);
         break;
       case '3':
-        tempHistoryCity (filtCountriesHead, filtCitiesHead);
+        tempHistoryCity (filtCitiesHead, samplePeriod);
         break;
       case '4':
         samplePeriod = getSamplePeriod ();
@@ -350,18 +367,12 @@ void deleteSeason(node_t** head, int iniMonth, int finMonth){
 
   //traverses the list
   node_t* aux = NULL;
-  //the first node of an unwanted section (to be deleted)
-  node_t* unwanted = NULL;
-  //the end of the section of wanted data (to connect to the next)
-  node_t* validEnd = NULL;
-  //the end of the next section of wanted data
-  node_t* validBegin = NULL;
 
   //finding the new head (which may stay the same)
   while (*head != NULL){
     //this condition boils down to:
     //if the head's month is within the inserted monthly bracket
-    //if it is, we break from the cycle
+    //we break from the cycle
     if(
       (
         iniMonth > finMonth &&  (
@@ -373,88 +384,32 @@ void deleteSeason(node_t** head, int iniMonth, int finMonth){
           (*head)->data.month >= iniMonth && (*head)->data.month <= finMonth )
       )
     )
-    break;
-    //if it is not, we keep moving the head forwards until we reach the new head
-    aux = *head;
-    (*head) = (*head)->next;
+      break;
+    //if it is not, we keep deleting the head, until the above condition is met
+    *head = deleteHead(*head);
   }
-  //severing and deleting the first part of the list
-  if (aux != NULL)
-    aux->next = NULL;
-  aux = freeSortedList(aux);
 
-
-  //aux will be the pointer we use to traverse the list until we find data outside the wanted bracket
   aux = *head;
 
-  while (true){
-    //this cycle will leave aux on the last element belonging to the wanted bracket
-    //which means aux->next is the beggining of a section we wish to delete
-    while (aux->next != NULL){
-      //if the data AFTER aux is still valid
-      if(
-        (
-          iniMonth > finMonth &&  (
-            ( aux->next->data.month >= iniMonth && aux->next->data.month <= 12) ||
-            ( aux->next->data.month >= 1 && aux->next->data.month <= finMonth)
-          )
-        )||(
-          iniMonth <= finMonth && (
-            aux->next->data.month >= iniMonth && aux->next->data.month <= finMonth )
+  while (aux->next != NULL){
+    //if the auxiliary pointer's month is within the inserted monthly bracket
+    //we go through to the next list entry from the cycle
+    if(
+      (
+        iniMonth > finMonth &&  (
+          ( aux->next->data.month >= iniMonth && aux->next->data.month <= 12) ||
+          ( aux->next->data.month >= 1 && aux->next->data.month <= finMonth)
         )
-      ){
-        //we go to the next element and don't execute the break
-        aux = aux->next;
-        continue;
-      }
-      break;
-    }
-
-    //if it reaches the end of the list, returns
-    if (aux->next == NULL)
-      return;
-
-    validEnd = aux;
-    unwanted = aux->next;
-
-    aux = unwanted;
-
-    //this cycle leaves aux on the last element which does not belong to the wanted bracket
-    //this means aux->next is what we want to connect to the last valid data
-    while (aux->next != NULL){
-      //if the data AFTER aux is valid
-      if(
-        (
-          iniMonth > finMonth &&  (
-            ( aux->next->data.month >= iniMonth && aux->next->data.month <= 12) ||
-            ( aux->next->data.month >= 1 && aux->next->data.month <= finMonth)
-          )
-        )||(
-          iniMonth <= finMonth && (
-            aux->next->data.month >= iniMonth && aux->next->data.month <= finMonth )
-        )
+      )||(
+        iniMonth <= finMonth && (
+          aux->next->data.month >= iniMonth && aux->next->data.month <= finMonth )
       )
-        //we break away from the cycle
-        break;
+    )
       aux = aux->next;
-    }
-
-    validBegin = aux->next;
-    //severing the list
-    aux->next = NULL;
-
-    unwanted = freeSortedList(unwanted);
-
-    //when it reaches the end of the list, returns after deleting the unwanted part of the list
-    if (aux->next == NULL)
-      return;
-
-    //connecting the ending of the last wanted data with the beggining of the next
-    validEnd->next = validBegin;
-    aux = validBegin;
+    else
+      //if it is not, we delete the node
+      deleteNode(aux);
   }
-
-
 
 }
 
@@ -558,15 +513,199 @@ void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountri
 
 //######################################################
 
-void tempHistoryGlobal(node_t* filtCountriesHead, node_t* filtCitiesHead){
+int getAllocSize(int range, int samplePeriod){
+
+  int allocSize = 0;
+
+  range++;
+
+  allocSize = range / samplePeriod;
+
+  if ((range % samplePeriod) != 0)
+    allocSize++;
+
+  return allocSize;
+}
+
+void printTempHistory(char** table, int lines){
+
+  int page = 0;
+  int maxPage = 0;
+  int firstEntry = 2;
+  int target = 2 + PAGE_SIZE;
+
+  maxPage = lines / PAGE_SIZE;
+  if ((lines % PAGE_SIZE) != 0)
+    maxPage++;
+
+  for (page = 0; page < maxPage; page++){
+    system("clear");
+    //printing the header
+    printf("%s%s", table[0], table[1]);
+
+    //if the target excedes the number of entries (the end of the page)
+    if (target > lines + 2)
+      target = lines + 2;
+
+    for (int i = firstEntry; i < target; i++){
+      printf("%s\n", table[i]);
+    }
+
+    firstEntry += (PAGE_SIZE);
+    target += (PAGE_SIZE);
+
+    getchar();
+
+  }
 
 }
 
-void tempHistoryCountry(node_t* filtCountriesHead, node_t* filtCitiesHead){
+void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
+
+  ListInfo info;
+  info = getListInfo(filtCountriesHead);
+  int lines = getAllocSize(info.range, samplePeriod);
+  node_t* aux = NULL;
+  int targetYear = info.minYear + samplePeriod;
+  float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
+  float carryAdder = 0.0f;
+  int counter = 0;
+  char (*table)[TABLE_SIZE] = NULL;
+
+  table = (char*)malloc(sizeof(char*) * (lines + 2));
+    if (table == NULL){
+      printf("Memory allocation error!\n");
+      exit (EXIT_FAILURE);
+    }
+  aux = filtCountriesHead;
+
+  system("clear");
+  sprintf(table[0], "Global Temperature History - %d year sample period\n\n", samplePeriod);
+  sprintf(table[1], "INTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n");
+
+  for (int i = 0; i < lines; i++){
+
+    while (aux != NULL && aux->data.year < targetYear){
+      if (aux->data.temp < minTemp)
+        minTemp = aux->data.temp;
+      if (aux->data.temp > maxTemp)
+        maxTemp = aux->data.temp;
+
+      carryAdder += aux->data.temp;
+      counter++;
+      aux = aux->next;
+    }
+
+    medTemp = (float)carryAdder / (float)counter;
+    carryAdder = 0.0f;
+    counter = 0;
+
+    if (targetYear > info.maxYear)
+      targetYear = info.maxYear;
+
+    if (maxTemp != -3000.0f && minTemp != 3000.0f)
+      sprintf(table[i+2], "%d-%d |   %.2f\t|   %.2f\t|   %.2f\n", (targetYear - samplePeriod), targetYear, maxTemp, minTemp, medTemp);
+
+    minTemp = 3000.0f;
+    maxTemp = -3000.f;
+    medTemp = 0.0f;
+
+    targetYear += samplePeriod;
+
+  }
+
+  printTempHistory(table, lines);
+  //free(table);
 
 }
 
-void tempHistoryCity(node_t* filtCountriesHead, node_t* filtCitiesHead){
+void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
+
+  ListInfo info;
+  info = getListInfo(filtCountriesHead);
+  int lines = getAllocSize(info.range, samplePeriod);
+  node_t* aux = NULL;
+  char buffer[BUFFER_SIZE] = {0};
+  int targetYear = info.minYear + samplePeriod;
+  float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
+  float carryAdder = 0.0f;
+  int counter = 0;
+  char (*table)[TABLE_SIZE] = NULL;
+  int foundName = 0;
+
+  table = (char*)malloc(sizeof(char*) * (lines + 2));
+    if (table == NULL){
+      printf("Memory allocation error!\n");
+      exit (EXIT_FAILURE);
+    }
+
+  system("clear");
+
+  printf("Insert the name of a country to get it's temperature history\nNote: The name is case-sensitive!\nCountry: ");
+  fgets(buffer, BUFFER_SIZE, stdin);
+  strtok(buffer, "\n");
+
+  aux = filtCountriesHead;
+  while (aux != NULL){
+    if (strstr(aux->data.name, buffer) != NULL){
+      strcpy(buffer, aux->data.name);
+      foundName = 1;
+      break;
+    }
+
+    aux = aux->next;
+  }
+
+  if (foundName == 0){
+    printf("Could not find a country named %s\n", buffer);
+    sleep(3);
+    return;
+  }
+
+  sprintf(table[0], "Temperature history for %s - %d year sample period\n\n", buffer, samplePeriod);
+  sprintf(table[1], "INTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n");
+
+  aux = filtCountriesHead;
+  for (int i = 0; i < lines; i++){
+
+    while (aux != NULL && aux->data.year < targetYear){
+      if (strstr(aux->data.name, buffer) != NULL){
+        if (aux->data.temp < minTemp)
+          minTemp = aux->data.temp;
+        if (aux->data.temp > maxTemp)
+          maxTemp = aux->data.temp;
+
+        carryAdder += aux->data.temp;
+        counter++;
+      }
+      aux = aux->next;
+    }
+
+    medTemp = (float)carryAdder / (float)counter;
+    carryAdder = 0.0f;
+    counter = 0;
+
+    if (targetYear > info.maxYear)
+      targetYear = info.maxYear;
+
+    if (maxTemp != -3000.0f && minTemp != 3000.0f)
+      sprintf(table[i+2], "%d-%d |   %.2f\t|   %.2f\t|   %.2f\n", (targetYear - samplePeriod), targetYear, maxTemp, minTemp, medTemp);
+
+    minTemp = 3000.0f;
+    maxTemp = -3000.f;
+    medTemp = 0.0f;
+
+    targetYear += samplePeriod;
+
+  }
+
+  getchar();
+  //free(table);
+
+
+}
+
+void tempHistoryCity(node_t* filtCitiesHead, int samplePeriod){
 
 }
 

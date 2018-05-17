@@ -8,7 +8,7 @@
 extern int minYear;
 extern int maxYear;
 
-ListInfo GetFileInfo(FILE* file){
+ListInfo getFileInfo(FILE* file){
 
   ListInfo info;
   char buffer[BUFFER_SIZE] = {0};
@@ -29,6 +29,28 @@ ListInfo GetFileInfo(FILE* file){
   info.range = info.maxYear - info.minYear;
 
   rewind(file);
+
+  return info;
+}
+
+ListInfo getListInfo(node_t* head){
+
+  ListInfo info;
+  node_t* aux = head;
+
+  info.minYear = 3000;
+  info.maxYear = 0;
+
+  while (aux != NULL){
+    if (aux->data.year < info.minYear)
+      info.minYear = aux->data.year;
+    if (aux->data.year > info.maxYear)
+      info.maxYear = aux->data.year;
+
+    aux = aux->next;
+  }
+
+  info.range = info.maxYear - info.minYear;
 
   return info;
 }

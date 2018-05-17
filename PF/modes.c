@@ -23,8 +23,8 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   node_t **citiesYearArray = NULL;
 
   //getting the information about the files needed to set up auxiliary pointers
-  countriesInfo = GetFileInfo(countriesFile);
-  citiesInfo = GetFileInfo(citiesFile);
+  countriesInfo = getFileInfo(countriesFile);
+  citiesInfo = getFileInfo(citiesFile);
 
   //setting the global variables to the minimum and maximum years in each file
   minYear = countriesInfo.minYear;

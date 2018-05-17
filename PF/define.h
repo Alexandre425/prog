@@ -1,6 +1,8 @@
 
 #define FILE_NAME_SIZE 20
 #define BUFFER_SIZE 100
+#define TABLE_SIZE 50
+#define PAGE_SIZE 20
 #define COUNTRY 0
 #define CITY 1
 #define true 1
@@ -64,7 +66,9 @@ void closeFiles(FILE*, FILE*);
 //returns a 'ListInfo' struct for a file, with information on
 //its year range
 //1. *file - a file, can either be countriesFile or citiesFile
-ListInfo GetFileInfo(FILE*);
+ListInfo getFileInfo(FILE*);
+
+ListInfo getListInfo(node_t*);
 
 //allocates memory for the auxiliary array of pointers to nodes
 //from the lists
@@ -146,9 +150,14 @@ void resetFilter(node_t*, node_t*, node_t**, node_t**);
 //2. filtCitiesHead - the head of the filtered city list
 void tempHistoryMenu(node_t*, node_t*);
 
-void tempHistoryGlobal(node_t*, node_t*);
-void tempHistoryCountry(node_t*, node_t*);
-void tempHistoryCity(node_t*, node_t*);
+  //gets the size of string page to be allocated
+  int getAllocSize(int, int);
+  //prints the temperature history in a 20 entry page
+  void printTempHistory(char**, int);
+
+void tempHistoryGlobal(node_t*, int);
+void tempHistoryCountry(node_t*, int);
+void tempHistoryCity(node_t*, int);
 
 //the yearly temperature analisis menu, allows the user to
 //see the hottest, coldest, and most-extreme (in terms of
