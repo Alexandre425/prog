@@ -319,7 +319,7 @@ void initalDateFilter(node_t** filtCountriesHead, node_t** filtCitiesHead){
     }
   }
 
-  while ((*filtCountriesHead)->next != NULL)
+  while ((*filtCountriesHead)->next != NULL){
     //if next entry is the first we want to keep
     if ((*filtCountriesHead)->next->data.year == year && (*filtCountriesHead)->next->data.month == month){
       auxCountries = *filtCountriesHead;
@@ -330,9 +330,156 @@ void initalDateFilter(node_t** filtCountriesHead, node_t** filtCitiesHead){
       freeSortedList(oldCountriesHead);
       break;
     }
+    (*filtCountriesHead) = (*filtCountriesHead)->next;
+  }
+
+  //same for the city list
+  while ((*filtCitiesHead)->next != NULL){
+    if ((*filtCitiesHead)->next->data.year == year && (*filtCitiesHead)->next->data.month == month){
+      auxCities = *filtCitiesHead;
+      *filtCitiesHead = (*filtCitiesHead)->next;
+      auxCities->next = NULL;
+      freeSortedList(oldCitiesHead);
+      break;
+    }
+    (*filtCitiesHead) = (*filtCitiesHead)->next;
+  }
+}
+
+void deleteSeason(node_t** head, int iniMonth, int finMonth){
+
+  //traverses the list
+  node_t* aux = NULL;
+  //the first node of an unwanted section (to be deleted)
+  node_t* unwanted = NULL;
+  //the end of the section of wanted data (to connect to the next)
+  node_t* validEnd = NULL;
+  //the end of the next section of wanted data
+  node_t* validBegin = NULL;
+
+  //finding the new head (which may stay the same)
+  while (*head != NULL){
+    //this condition boils down to:
+    //if the head's month is within the inserted monthly bracket
+    //if it is, we break from the cycle
+    if(
+      (
+        iniMonth > finMonth &&  (
+          ( (*head)->data.month >= iniMonth && (*head)->data.month <= 12) ||
+          ( (*head)->data.month >= 1 && (*head)->data.month <= finMonth)
+        )
+      )||(
+        iniMonth <= finMonth && (
+          (*head)->data.month >= iniMonth && (*head)->data.month <= finMonth )
+      )
+    )
+    break;
+    //if it is not, we keep moving the head forwards until we reach the new head
+    aux = *head;
+    (*head) = (*head)->next;
+  }
+  //severing and deleting the first part of the list
+  if (aux != NULL)
+    aux->next = NULL;
+  aux = freeSortedList(aux);
+
+
+  //aux will be the pointer we use to traverse the list until we find data outside the wanted bracket
+  aux = *head;
+
+  while (true){
+    //this cycle will leave aux on the last element belonging to the wanted bracket
+    //which means aux->next is the beggining of a section we wish to delete
+    while (aux->next != NULL){
+      //if the data AFTER aux is still valid
+      if(
+        (
+          iniMonth > finMonth &&  (
+            ( aux->next->data.month >= iniMonth && aux->next->data.month <= 12) ||
+            ( aux->next->data.month >= 1 && aux->next->data.month <= finMonth)
+          )
+        )||(
+          iniMonth <= finMonth && (
+            aux->next->data.month >= iniMonth && aux->next->data.month <= finMonth )
+        )
+      ){
+        //we go to the next element and don't execute the break
+        aux = aux->next;
+        continue;
+      }
+      break;
+    }
+
+    //if it reaches the end of the list, returns
+    if (aux->next == NULL)
+      return;
+
+    validEnd = aux;
+    unwanted = aux->next;
+
+    aux = unwanted;
+
+    //this cycle leaves aux on the last element which does not belong to the wanted bracket
+    //this means aux->next is what we want to connect to the last valid data
+    while (aux->next != NULL){
+      //if the data AFTER aux is valid
+      if(
+        (
+          iniMonth > finMonth &&  (
+            ( aux->next->data.month >= iniMonth && aux->next->data.month <= 12) ||
+            ( aux->next->data.month >= 1 && aux->next->data.month <= finMonth)
+          )
+        )||(
+          iniMonth <= finMonth && (
+            aux->next->data.month >= iniMonth && aux->next->data.month <= finMonth )
+        )
+      )
+        //we break away from the cycle
+        break;
+      aux = aux->next;
+    }
+
+    validBegin = aux->next;
+    //severing the list
+    aux->next = NULL;
+
+    unwanted = freeSortedList(unwanted);
+
+    //when it reaches the end of the list, returns after deleting the unwanted part of the list
+    if (aux->next == NULL)
+      return;
+
+    //connecting the ending of the last wanted data with the beggining of the next
+    validEnd->next = validBegin;
+    aux = validBegin;
+  }
+
+
+
 }
 
 void seasonFilter(node_t** filtCountriesHead, node_t** filtCitiesHead){
+
+  char buffer[BUFFER_SIZE] = {0};
+  int iniMonth = 0, finMonth = 0;
+
+  while (iniMonth <= 0 || iniMonth > 12 || finMonth <= 0 || finMonth > 12){
+    buffer[0] = '\0';
+    system("clear");
+    printf("Insert an initial and a final month (MM-MM).\n");
+    printf("Any data not inserted in that bracket will be discarded: ");
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%d-%d", &iniMonth, &finMonth);
+
+    if (iniMonth <= 0 || iniMonth > 12 || finMonth <= 0 || finMonth > 12){
+      printf("Inserted months are not valid!\n");
+      sleep(2);
+    }
+  }
+
+  deleteSeason(filtCountriesHead, iniMonth, finMonth);
+  deleteSeason(filtCitiesHead, iniMonth, finMonth);
+
 
 }
 
@@ -353,24 +500,27 @@ void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountri
   aux1 = countriesHead;
 
   //getting the head of the list copy
+  data.year = aux1->data.year;
+  data.month = aux1->data.month;
+  data.temp = aux1->data.temp;
+  pos = aux1->pos;
   strcpy(data.name, aux1->data.name);
   *filtCountriesHead = getNewNode(data, pos);
 
   //auxiliary pointer to the head of the list copy
   aux2 = *filtCountriesHead;
 
-  //copying the data to the new head
-  (*filtCountriesHead)->data = aux1->data;
-
   while (aux1->next != NULL){
 
     aux1 = aux1->next;
 
-    //getting the new node
+    data.year = aux1->data.year;
+    data.month = aux1->data.month;
+    data.temp = aux1->data.temp;
+    pos = aux1->pos;
     strcpy(data.name, aux1->data.name);
     newNode = getNewNode(data, pos);
-    //copying the data to the new node
-    newNode->data = aux1->data;
+
     //inserting the new node after the last
     aux2->next = newNode;
     aux2 = aux2->next;
@@ -380,24 +530,26 @@ void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountri
 
     aux1 = citiesHead;
 
+    data.year = aux1->data.year;
+    data.month = aux1->data.month;
+    data.temp = aux1->data.temp;
+    pos = aux1->pos;
     strcpy(data.name, aux1->data.name);
     *filtCitiesHead = getNewNode(data, pos);
 
-    //auxiliary pointer to the head of the list copy
     aux2 = *filtCitiesHead;
-
-    //copying the data to the new head
-    (*filtCitiesHead)->data = aux1->data;
 
     while (aux1->next != NULL){
 
       aux1 = aux1->next;
 
-      //getting the new node
+      data.year = aux1->data.year;
+      data.month = aux1->data.month;
+      data.temp = aux1->data.temp;
+      pos = aux1->pos;
       strcpy(data.name, aux1->data.name);
       newNode = getNewNode(data, pos);
-      //copying the data to the new node
-      newNode->data = aux1->data;
+
       //inserting the new node after the last
       aux2->next = newNode;
       aux2 = aux2->next;

@@ -1,8 +1,9 @@
+
 typedef struct temp{
   int year;
   int month;
   float temp;
-  char name[50];
+  char name[100];
 } temp;
 
 typedef struct data1{

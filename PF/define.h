@@ -1,3 +1,4 @@
+
 #define FILE_NAME_SIZE 20
 #define BUFFER_SIZE 100
 #define COUNTRY 0
@@ -135,6 +136,7 @@ void dataFilterMenu(node_t*, node_t*, node_t**, node_t**);
 
 void initalDateFilter(node_t**, node_t**);
 void seasonFilter(node_t**, node_t**);
+  void deleteSeason(node_t**, int, int);
 void resetFilter(node_t*, node_t*, node_t**, node_t**);
 
 //the temperature history menu, allows the user to see
