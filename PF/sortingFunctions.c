@@ -86,7 +86,7 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   while (fgets(buffer, BUFFER_SIZE, countriesFile) != NULL){
     //resetting the buffer
     memcpy(&data, &cmp, sizeof(temp));
-    sscanf(buffer, "%d-%d-01,%f,%f,%[^\n]", &data.year, &data.month, &data.temp,
+    sscanf(buffer, "%d-%d-01,%f,%f,%[^\r]", &data.year, &data.month, &data.temp,
       &deviation, data.name);
     //if the data pulled from the file has a temperature
     if (data.temp != 1000.0f){
@@ -144,7 +144,6 @@ node_t* getNewNode(temp data, data2 pos){
   newNode->data.month = data.month;
   newNode->data.temp = data.temp;
   newNode->pos = pos;
-
   newNode->data.name = (char*)malloc( (strlen(data.name) + 1) * sizeof(char) );
   strcpy(newNode->data.name, data.name);
   newNode->next = NULL;
@@ -253,4 +252,59 @@ int findIndex(data1 data ){
   int index = 0;
   index = data.year - minYear;
   return index;
+}
+
+top_t* yearlyTemp_getNewNode(top_t data){
+
+  top_t* newNode = NULL;
+  newNode = (top_t*)malloc(sizeof(node_t));
+  if (newNode == NULL){
+    printf("Memory allocation error!\n");
+    exit (EXIT_FAILURE);
+  }
+
+  strcpy(newNode->name, data.name);
+  newNode->temp = data.temp;
+  newNode->range = data.range;
+  newNode->next = NULL;
+
+  return newNode;
+}
+
+top_t* yearlyTemp_sortedInsertTemp(top_t* head, top_t* newNode){
+
+  top_t* aux = NULL;
+
+  //if there is no head
+  if (head == NULL){
+    return newNode;
+  }
+
+  //if the new node has a higher temperature (if it belongs before the list head)
+  if (newNode->temp > head->temp){
+    newNode->next = head;
+    return newNode;
+  }
+
+  //traversing the list until aux->next has a lower temperature
+  aux = head;
+  while (aux->next != NULL){
+    if (newNode->temp > aux->next->temp)
+      break;
+    aux = aux->next;
+  }
+
+  //if we are inserting at the end of the list
+  if (aux->next == NULL){
+    aux->next = newNode;
+    return head;
+  }
+
+  //if we are inserting in the middle of the list
+  else{
+    newNode->next = aux->next;
+    aux->next = newNode;
+    return head;
+  }
+
 }

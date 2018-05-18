@@ -223,10 +223,10 @@ void yearlyTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
     switch (c) {
       case '1':
-        yearlyTempCountries (filtCountriesHead, filtCitiesHead);
+        yearlyTempCountries (filtCountriesHead, sampleYear);
         break;
       case '2':
-        yearlyTempCities(filtCountriesHead, filtCitiesHead);
+        yearlyTempCities(filtCitiesHead, sampleYear);
         break;
       case '3':
         sampleYear = getSampleYear ();
@@ -258,8 +258,6 @@ int getNumYears (){
       sleep(2);
     }
   }
-
-
 
   return numYears;
 }
@@ -527,12 +525,14 @@ int getAllocSize(int range, int samplePeriod){
   return allocSize;
 }
 
-void printTempHistory(char** table, int lines){
+void printTempHistory(hist* histData, char header[HEADER_SIZE], int lines){
 
   int page = 0;
   int maxPage = 0;
-  int firstEntry = 2;
-  int target = 2 + PAGE_SIZE;
+  int firstEntry = 0;
+  int target = PAGE_SIZE;
+  char buffer[BUFFER_SIZE] = {0};
+  char c = 0;
 
   maxPage = lines / PAGE_SIZE;
   if ((lines % PAGE_SIZE) != 0)
@@ -541,48 +541,72 @@ void printTempHistory(char** table, int lines){
   for (page = 0; page < maxPage; page++){
     system("clear");
     //printing the header
-    printf("%s%s", table[0], table[1]);
+    printf("%s", header);
 
     //if the target excedes the number of entries (the end of the page)
-    if (target > lines + 2)
-      target = lines + 2;
+    if (target > lines)
+      target = lines;
 
     for (int i = firstEntry; i < target; i++){
-      printf("%s\n", table[i]);
+      //detecting unfilled array indexes, and not printing them
+      if (histData[i].iniYear != 0)
+        printf("%d-%d |   %.2f\t|   %.2f\t|   %.2f\n", histData[i].iniYear, histData[i].finYear, histData[i].minTemp, histData[i].maxTemp, histData[i].medTemp);
     }
 
     firstEntry += (PAGE_SIZE);
     target += (PAGE_SIZE);
 
-    getchar();
+    printf("Press 'a' to go to the next page\n");
+    printf("Press 'q' to return to the Temperature History Menu\n");
 
+    c = 0;
+
+    while (c != 'a' && c != 'q'){
+      fgets(buffer, BUFFER_SIZE, stdin);
+      sscanf(buffer, "%c", &c);
+
+      switch (c) {
+        case 'a':
+          //goes to the next page
+          break;
+        case 'q':
+          //returns to tempHistoryMenu (after going through the intermediate function)
+          return;
+          break;
+        default:
+          //repeats the 'while' loop
+          break;
+      }
+    }
   }
-
 }
 
 void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
 
   ListInfo info;
   info = getListInfo(filtCountriesHead);
+
   int lines = getAllocSize(info.range, samplePeriod);
-  node_t* aux = NULL;
   int targetYear = info.minYear + samplePeriod;
+
   float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
   float carryAdder = 0.0f;
   int counter = 0;
-  char (*table)[TABLE_SIZE] = NULL;
 
-  table = (char*)malloc(sizeof(char*) * (lines + 2));
-    if (table == NULL){
-      printf("Memory allocation error!\n");
-      exit (EXIT_FAILURE);
-    }
+  node_t* aux = NULL;
+  //array with all the information to be printed
+  hist* histData = NULL;
+  char header[HEADER_SIZE] = {0};
+
+  histData = (hist*)malloc(sizeof(hist) * lines);
+  if (histData == NULL){
+    printf("Memory allocation error!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  sprintf(header, "Global Temperature History - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", samplePeriod);
+
   aux = filtCountriesHead;
-
-  system("clear");
-  sprintf(table[0], "Global Temperature History - %d year sample period\n\n", samplePeriod);
-  sprintf(table[1], "INTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n");
-
   for (int i = 0; i < lines; i++){
 
     while (aux != NULL && aux->data.year < targetYear){
@@ -603,8 +627,13 @@ void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
     if (targetYear > info.maxYear)
       targetYear = info.maxYear;
 
-    if (maxTemp != -3000.0f && minTemp != 3000.0f)
-      sprintf(table[i+2], "%d-%d |   %.2f\t|   %.2f\t|   %.2f\n", (targetYear - samplePeriod), targetYear, maxTemp, minTemp, medTemp);
+    if (maxTemp != -3000.0f && minTemp != 3000.0f){
+      histData[i].iniYear = (targetYear - samplePeriod);
+      histData[i].finYear = targetYear;
+      histData[i].maxTemp = maxTemp;
+      histData[i].minTemp = minTemp;
+      histData[i].medTemp = medTemp;
+    }
 
     minTemp = 3000.0f;
     maxTemp = -3000.f;
@@ -614,37 +643,36 @@ void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
 
   }
 
-  printTempHistory(table, lines);
-  //free(table);
+  printTempHistory(histData, header, lines);
 
+  free(histData);
 }
 
 void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
 
   ListInfo info;
   info = getListInfo(filtCountriesHead);
+
   int lines = getAllocSize(info.range, samplePeriod);
-  node_t* aux = NULL;
-  char buffer[BUFFER_SIZE] = {0};
   int targetYear = info.minYear + samplePeriod;
+
   float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
   float carryAdder = 0.0f;
   int counter = 0;
-  char (*table)[TABLE_SIZE] = NULL;
+
+  node_t* aux = NULL;
+  //array with all the information to be printed
+  hist* histData = NULL;
+  char header[HEADER_SIZE] = {0};
+
+  char buffer[BUFFER_SIZE] = {0};
   int foundName = 0;
-
-  table = (char*)malloc(sizeof(char*) * (lines + 2));
-    if (table == NULL){
-      printf("Memory allocation error!\n");
-      exit (EXIT_FAILURE);
-    }
-
-  system("clear");
 
   printf("Insert the name of a country to get it's temperature history\nNote: The name is case-sensitive!\nCountry: ");
   fgets(buffer, BUFFER_SIZE, stdin);
   strtok(buffer, "\n");
 
+  //finding the name on the list
   aux = filtCountriesHead;
   while (aux != NULL){
     if (strstr(aux->data.name, buffer) != NULL){
@@ -652,8 +680,8 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
       foundName = 1;
       break;
     }
-
-    aux = aux->next;
+    else
+      aux = aux->next;
   }
 
   if (foundName == 0){
@@ -662,8 +690,14 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
     return;
   }
 
-  sprintf(table[0], "Temperature history for %s - %d year sample period\n\n", buffer, samplePeriod);
-  sprintf(table[1], "INTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n");
+  //only need to allocate the array to be printed if we
+  histData = (hist*)calloc(lines, sizeof(hist));
+  if (histData == NULL){
+    printf("Memory allocation error!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  sprintf(header, "Temperature history for %s - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", buffer, samplePeriod);
 
   aux = filtCountriesHead;
   for (int i = 0; i < lines; i++){
@@ -688,8 +722,13 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
     if (targetYear > info.maxYear)
       targetYear = info.maxYear;
 
-    if (maxTemp != -3000.0f && minTemp != 3000.0f)
-      sprintf(table[i+2], "%d-%d |   %.2f\t|   %.2f\t|   %.2f\n", (targetYear - samplePeriod), targetYear, maxTemp, minTemp, medTemp);
+    if (maxTemp != -3000.0f && minTemp != 3000.0f){
+      histData[i].iniYear = (targetYear - samplePeriod);
+      histData[i].finYear = targetYear;
+      histData[i].maxTemp = maxTemp;
+      histData[i].minTemp = minTemp;
+      histData[i].medTemp = medTemp;
+    }
 
     minTemp = 3000.0f;
     maxTemp = -3000.f;
@@ -699,23 +738,149 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
 
   }
 
-  getchar();
-  //free(table);
+  printTempHistory(histData, header, lines);
 
+  free(histData);
 
 }
 
 void tempHistoryCity(node_t* filtCitiesHead, int samplePeriod){
 
+  ListInfo info;
+  info = getListInfo(filtCitiesHead);
+
+  int lines = getAllocSize(info.range, samplePeriod);
+  int targetYear = info.minYear + samplePeriod;
+
+  float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
+  float carryAdder = 0.0f;
+  int counter = 0;
+
+  node_t* aux = NULL;
+  //array with all the information to be printed
+  hist* histData = NULL;
+  char header[HEADER_SIZE] = {0};
+
+  char buffer[BUFFER_SIZE] = {0};
+  int foundName = 0;
+
+  printf("Insert the name of a city to get it's temperature history\nNote: The name is case-sensitive!\nCity: ");
+  fgets(buffer, BUFFER_SIZE, stdin);
+  strtok(buffer, "\n");
+
+  //finding the name on the list
+  aux = filtCitiesHead;
+  while (aux != NULL){
+    if (strstr(aux->data.name, buffer) != NULL){
+      strcpy(buffer, aux->data.name);
+      foundName = 1;
+      break;
+    }
+    else
+      aux = aux->next;
+  }
+
+  if (foundName == 0){
+    printf("Could not find a city named %s\n", buffer);
+    sleep(3);
+    return;
+  }
+
+  //only need to allocate the array to be printed if we
+  histData = (hist*)calloc(lines, sizeof(hist));
+  if (histData == NULL){
+    printf("Memory allocation error!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  sprintf(header, "Temperature history for %s - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", buffer, samplePeriod);
+
+  aux = filtCitiesHead;
+  for (int i = 0; i < lines; i++){
+
+    while (aux != NULL && aux->data.year < targetYear){
+      if (strstr(aux->data.name, buffer) != NULL){
+        if (aux->data.temp < minTemp)
+          minTemp = aux->data.temp;
+        if (aux->data.temp > maxTemp)
+          maxTemp = aux->data.temp;
+
+        carryAdder += aux->data.temp;
+        counter++;
+      }
+      aux = aux->next;
+    }
+
+    medTemp = (float)carryAdder / (float)counter;
+    carryAdder = 0.0f;
+    counter = 0;
+
+    if (targetYear > info.maxYear)
+      targetYear = info.maxYear;
+
+    if (maxTemp != -3000.0f && minTemp != 3000.0f){
+      histData[i].iniYear = (targetYear - samplePeriod);
+      histData[i].finYear = targetYear;
+      histData[i].maxTemp = maxTemp;
+      histData[i].minTemp = minTemp;
+      histData[i].medTemp = medTemp;
+    }
+
+    minTemp = 3000.0f;
+    maxTemp = -3000.f;
+    medTemp = 0.0f;
+
+    targetYear += samplePeriod;
+
+  }
+
+  printTempHistory(histData, header, lines);
+
+  free(histData);
+
+
 }
 
 //######################################################
 
-void yearlyTempCountries(node_t* filtCountriesHead, node_t* filtCitiesHead){
+int getNumberOfEntries(){
+
+  int numberOfEntries = 0;
+  char buffer[BUFFER_SIZE] = {0};
+
+
+  while (numberOfEntries <= 0 || numberOfEntries > 20){
+    buffer[0] = '\0';
+    system("clear");
+    printf("\nInsert the number of entries (1-20) to be shown on the list: ");
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%d", &numYears);
+
+    if (numberOfEntries <= 0 || numberOfEntries > 20){
+      printf("Inserted number is not within the limits!\n");
+      sleep(2);
+    }
+  }
+
+  return numberOfEntries;
+}
+
+void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
+
+  int numberOfEntries = getNumberOfEntries();
+
+  //has the countries sorted by their medium temperature
+  top_t* tempHead = NULL;
+  //has the countries sorted by their temperature range
+  top_t* rangeHead = NULL;
+
+  top_t data;
+
+
 
 }
 
-void yearlyTempCities(node_t* filtCountriesHead, node_t* filtCitiesHead){
+void yearlyTempCities(node_t* filtCitiesHead, int sampleYear){
 
 }
 

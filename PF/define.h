@@ -1,7 +1,7 @@
 
 #define FILE_NAME_SIZE 20
 #define BUFFER_SIZE 100
-#define TABLE_SIZE 50
+#define HEADER_SIZE 300
 #define PAGE_SIZE 20
 #define COUNTRY 0
 #define CITY 1
@@ -118,6 +118,23 @@ node_t* deleteHead(node_t*);
 //1. data - data1 struct, containing the year
 int findIndex(data1);
 
+//gets a new node for the top-x lists
+//returns the pointer to the new allocated node
+//1. data - structure with the data for the new entry
+top_t* yearlyTemp_getNewNode(top_t);
+
+//does a sorted insertion of a new node in the median tmp. list
+//returns the (possibly new) head of the list
+//1. head - the head of the top list
+//2. newNode - the new node to be inserted
+top_t* yearlyTemp_sortedInsertTemp(top_t*, top_t*);
+
+//does a sorted insertion of a new node in the tmp. range list
+//returns the (possibly new) head of the list
+//1. head - the head of the top list
+//2. newNode - the new node to be inserted
+top_t* yearlyTemp_sortedInsertRange(top_t*, top_t*);
+
 //############################################################
 //DECLARATION OF MENU FUNCTIONS
 //
@@ -153,7 +170,7 @@ void tempHistoryMenu(node_t*, node_t*);
   //gets the size of string page to be allocated
   int getAllocSize(int, int);
   //prints the temperature history in a 20 entry page
-  void printTempHistory(char**, int);
+  void printTempHistory(hist*, char[HEADER_SIZE],int);
 
 void tempHistoryGlobal(node_t*, int);
 void tempHistoryCountry(node_t*, int);
@@ -166,8 +183,8 @@ void tempHistoryCity(node_t*, int);
 //2. filtCitiesHead - the head of the filtered city list
 void yearlyTempMenu(node_t*, node_t*);
 
-void yearlyTempCountries(node_t*, node_t*);
-void yearlyTempCities(node_t*, node_t*);
+void yearlyTempCountries(node_t*, int);
+void yearlyTempCities(node_t*, int);
 
 //the global temperature analisis menu, uses the moving average
 //to calculate the temperature change globally, or for a country

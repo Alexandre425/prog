@@ -1,4 +1,4 @@
-
+//temporarily stores the data for a new node
 typedef struct temp{
   int year;
   int month;
@@ -33,3 +33,21 @@ typedef struct{
   int minYear;
   int range;
 } ListInfo;
+
+//holds data to be printed by the history menu
+typedef struct{
+  int iniYear;
+  int finYear;
+  float maxTemp;
+  float minTemp;
+  float medTemp;
+} hist;
+
+//node for the yearly temperature list
+//used to make the top-x
+typedef struct top{
+  char name[80];
+  float temp;
+  float range;
+  struct top* next;
+} top_t;
