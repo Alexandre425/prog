@@ -234,3 +234,11 @@ int getSampleYear();
 //gets the ammount of months to calculate the moving average with
 //returns the ammount of months
 int getNumMonths();
+
+//############################################################
+//DECLARATION OF MENU FUNCTIONS
+//
+//functions present in 'menuFunctions'
+//used for user interaction, all of them being connected by
+//'mainMenu'.
+//############################################################

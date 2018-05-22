@@ -77,7 +77,7 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   //buffer to pull data from the file
   temp data;
   temp cmp = {0, 0, 1000.0f, "\0"};
-  data2 pos = {0.0f, 0.0f};
+  data2 pos = {0.0f, 0, 0.0f, 0};
 
   system("clear");
   printf("Loading files, please wait...\n");
@@ -112,6 +112,45 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   }
   rewind(citiesFile);
 
+}
+
+node_t* loadCityList(FILE* citiesFile){
+
+  node_t* newNode = NULL;
+  node_t* aux = NULL;
+  node_t* citiesHead = NULL;
+  float deviation = 0.0f;
+  temp data;
+  temp cmp = {0, 0, 1000.0f, "\0"};
+  data2 pos = {0.0f, 0, 0.0f, 0};
+
+  char buffer[BUFFER_SIZE] = {0};
+  char countryName[BUFFER_SIZE] = {0};
+
+  system("clear");
+  printf("Loading files, please wait...\n");
+
+  while (fgets(buffer, BUFFER_SIZE, citiesFile) != NULL){
+    memcpy(&data, &cmp, sizeof(temp));
+    sscanf(buffer, "%d-%d-01,%f,%f,%[^,],%[^,],%f%c,%f%c", &data.year, &data.month,
+      &data.temp, &deviation, data.name, countryName, &pos.lat, &pos.cLat,
+      &pos.lon, &pos.cLon);
+
+    if (data.temp != 1000.0f){
+      newNode = getNewNode(data, pos);
+      if (aux == NULL){
+        aux = newNode;
+        citiesHead = newNode;
+      }
+      else{
+        aux->next = newNode;
+        aux = aux->next;
+      }
+    }
+  }
+  rewind(citiesFile);
+
+  return citiesHead;
 }
 
 node_t* freeSortedList(node_t* head){

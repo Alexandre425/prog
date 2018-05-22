@@ -53,3 +53,8 @@ typedef struct top{
 } top_t;
 
 //n
+typedef struct {
+  int year;
+  int month;
+  float temp;
+} median;

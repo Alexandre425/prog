@@ -626,6 +626,7 @@ void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
     if (targetYear > info.maxYear)
       targetYear = info.maxYear;
 
+    histData[i].iniYear = 0;
     if (maxTemp != -3000.0f && minTemp != 3000.0f){
       histData[i].iniYear = (targetYear - samplePeriod);
       histData[i].finYear = targetYear;
@@ -948,6 +949,10 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
 
   }
 
+  freeStringArray(maxTempStrings, numberOfEntries);
+  freeStringArray(minTempStrings, numberOfEntries);
+  freeStringArray(rangeStrings, numberOfEntries);
+
 
   getchar();
 
@@ -962,6 +967,9 @@ void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
   top_t* rangeHead = NULL;
 
   yearlyTemp_createSortedLists(filtCountriesHead, sampleYear, &tempHead, &rangeHead);
+
+  if (tempHead == NULL || rangeHead == NULL)
+    return;
 
   printYearlyTemp(tempHead, rangeHead, numberOfEntries, COUNTRY);
 
@@ -998,7 +1006,7 @@ void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
   printf("%s", header);
 
   for (int i = 0; i < 5; i++){
-    if (tempChangeArray[i] != 1000.0f)
+    if (tempChangeArray[i] != 0.0f)
       printf(" %d  | %.2f\n", tempChangeYears[i], tempChangeArray[i]);
   }
 
@@ -1006,32 +1014,64 @@ void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
 
 }
 
-float getMovingAverage(node_t* startPtr, node_t* targetPtr){
+median* getMedianTempByMonth(node_t* head, int* lastIndex){
+
+  int counter = 1;
+  node_t* aux = NULL;
+  median* medianArray = NULL;
 
   float carryAdder = 0.0f;
-  int counter = 0;
-  float movingAverage = 0.0f;
+  int index = 0;
 
-
-  while (startPtr != targetPtr->next){
-    carryAdder += startPtr->data.temp;
-    counter++;
-    startPtr = startPtr->next;
+  //getting the allocation size
+  aux = head;
+  while (aux->next != NULL){
+    //detecting a change in date, meaning we must allocate for one more month
+    if (aux->data.year != aux->next->data.year || aux->data.month != aux->next->data.month)
+      counter++;
+    aux = aux->next;
   }
 
-  movingAverage = ((float)carryAdder / (float)counter);
+  *lastIndex = counter;
 
-  return movingAverage;
+  //allocating the array (one entry for each different date in the data)
+  medianArray = (median*)malloc(sizeof(median) * counter);
+  if (medianArray == NULL){
+    printf("Memory alocation error!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  aux = head;
+  counter = 0;
+  while (aux->next != NULL){
+    carryAdder += aux->data.temp;
+    counter++;
+    if (aux->data.year != aux->next->data.year || aux->data.month != aux->next->data.month){
+      medianArray[index].year = aux->data.year;
+      medianArray[index].month = aux->data.month;
+      medianArray[index].temp = ((float)carryAdder / (float)counter);
+      carryAdder = 0.0f;
+      counter = 0;
+      index++;
+    }
+    aux = aux->next;
+  }
+
+  return medianArray;
+
 }
 
 void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
 
-  node_t* startPtr = NULL;
-  node_t* targetPtr = NULL;
+  int lastIndex = 0;
+  median* medianTempByMonth = getMedianTempByMonth(filtCountriesHead, &lastIndex);
 
+  int startIndex = 0;
+  int targetIndex = 0;
+  int aux = 0;
+
+  float carryAdder = 0.0f;
   int counter = 0;
-  int currMonth = 0;
-  int currYear = 0;
 
   float movingAverage = 0.0f;
   float minTemp = 1000.0f;
@@ -1041,66 +1081,53 @@ void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
   float tempChange = 0.0f;
 
   int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
-  float tempChangeArray[5] = {1000.0f};
+  float tempChangeArray[5] = {0.0f};
 
   char header[HEADER_SIZE] = {0};
 
   sprintf(header, "Global Temperature Analisis\n\n Until | Temperature change\n");
 
-  startPtr = filtCountriesHead;
-  targetPtr = filtCountriesHead;
-  currMonth = filtCountriesHead->data.month;
-  currYear = filtCountriesHead->data.year;
 
-  //initially moving the target pointer to the correct place (numMonths months forward)
-  while (counter < numMonths){
-    if (targetPtr->next->data.month != currMonth || targetPtr->next->data.year != currYear){
+  targetIndex = startIndex + numMonths - 1;
+  while (targetIndex < lastIndex){
+
+    carryAdder = 0.0f;
+    counter = 0;
+    aux = startIndex;
+    while (aux < targetIndex){
+      carryAdder += medianTempByMonth[aux].temp;
       counter++;
+      aux++;
     }
-    targetPtr = targetPtr->next;
-    currMonth = targetPtr->data.month;
-    currYear = targetPtr->data.year;
-  }
-
-  while (targetPtr->next != NULL){
-
-    movingAverage = getMovingAverage(startPtr, targetPtr);
+    movingAverage = ((float)carryAdder / (float)counter);
 
     if (movingAverage < minTemp){
       minTemp = movingAverage;
-      minTempYear = currYear;
+      minTempYear = medianTempByMonth[targetIndex].year;
     }
     if (movingAverage > maxTemp){
       maxTemp = movingAverage;
-      maxTempYear = currYear;
+      maxTempYear = medianTempByMonth[targetIndex].year;
     }
 
-    //getting the new starting pointer (moving it to the beggining of the next month)
-    currMonth = startPtr->data.month;
-    currYear = startPtr->data.year;
-    while (startPtr->data.month == currMonth && startPtr->data.year == currYear)
-      startPtr = startPtr->next;
-
-    //getting the new target pointer (moving it to the end of the next month)
-    currMonth = targetPtr->next->data.month;
-    currYear = targetPtr->next->data.year;
-    while (targetPtr->next->data.month == currMonth && targetPtr->next->data.year == currYear){
-      targetPtr = targetPtr->next;
-      if (targetPtr->next == NULL)
-        break;
-    }
+    tempChange = maxTemp - minTemp;
 
     for (int i = 0; i < 5; i++){
-      if (currYear == tempChangeYears[i]){
+      if (medianTempByMonth[targetIndex].year == tempChangeYears[i]){
         tempChange = maxTemp - minTemp;
         if (maxTempYear < minTempYear)
           tempChange *= -1.0f;
         tempChangeArray[i] = tempChange;
       }
     }
+
+    startIndex++;
+    targetIndex++;
   }
 
   printGlobalTemp(tempChangeArray, header);
+
+  free(medianTempByMonth);
 
 }
 
