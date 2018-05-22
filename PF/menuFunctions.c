@@ -241,45 +241,44 @@ void yearlyTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
   }
 }
 
-int getNumYears (){
-  int numYears = 0;
+int getNumMonths (){
+  int numMonths = 0;
   char buffer[BUFFER_SIZE] = {0};
 
-
-  while (numYears <= 0 || numYears > 1000 || (numYears % 2) == 0){
+  while (numMonths <= 0 || numMonths > 1000){
     buffer[0] = '\0';
     system("clear");
-    printf("\nInsert an odd number of years for the Moving Average calculation: ");
+    printf("\nInsert the number of months for the Moving Average calculation: ");
     fgets(buffer, BUFFER_SIZE, stdin);
-    sscanf(buffer, "%d", &numYears);
+    sscanf(buffer, "%d", &numMonths);
 
-    if (numYears <= 0 || numYears > 1000 || (numYears % 2) == 0){
-      printf("Inserted number is not valid! Make sure it is an odd number\n");
+    if (numMonths <= 0 || numMonths > 1000){
+      printf("Inserted number is not valid!\n");
       sleep(2);
     }
   }
 
-  return numYears;
+  return numMonths;
 }
 
 void globalTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
   char c = 0;
-  int numYears = 0;
+  int numMonths = 0;
 
-  numYears = getNumYears ();
+  numMonths = getNumMonths ();
 
   while(true){
 
     system("clear");
 
-    printf("Yearly Temperature Analisis:\n");
+    printf("Global Temperature Analisis:\n");
     printf("This section uses the Moving Average concept in order to eliminate temperature data fluctuations and calculate global climate change\n");
     printf("Select one of the following options to analise the temperature change:\n");
     printf("1. Globally\n");
     printf("2. By a country\n");
     printf("3. By a city\n");
-    printf("4. Change the number of years selected\n");
+    printf("4. Change the number of months selected\n");
     printf("5. Return to main menu\n");
 
     c = getchar();
@@ -287,16 +286,16 @@ void globalTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
     switch (c) {
       case '1':
-        globalTempGlobal (filtCountriesHead, filtCitiesHead);
+        globalTempGlobal (filtCountriesHead, numMonths);
         break;
       case '2':
-        globalTempCountry (filtCountriesHead, filtCitiesHead);
+        globalTempCountry (filtCountriesHead, numMonths);
         break;
       case '3':
-        globalTempCity (filtCountriesHead, filtCitiesHead);
+        globalTempCity (filtCitiesHead, numMonths);
         break;
       case '4':
-        numYears = getNumYears ();
+        numMonths = getNumMonths ();
         break;
       case '5':
         return;
@@ -854,7 +853,7 @@ int getNumberOfEntries(){
     system("clear");
     printf("\nInsert the number of entries (1-20) to be shown on the list: ");
     fgets(buffer, BUFFER_SIZE, stdin);
-    sscanf(buffer, "%d", &numYears);
+    sscanf(buffer, "%d", &numberOfEntries);
 
     if (numberOfEntries <= 0 || numberOfEntries > 20){
       printf("Inserted number is not within the limits!\n");
@@ -865,35 +864,250 @@ int getNumberOfEntries(){
   return numberOfEntries;
 }
 
+char** allocateStringArray(int numberOfEntries){
+
+  char** stringArray = NULL;
+
+  stringArray = (char**)malloc(sizeof(char*) * numberOfEntries);
+  if (stringArray == NULL){
+    printf("Memory allocation error!\n");
+    exit(-1);
+  }
+
+  for (int i = 0; i < numberOfEntries; i++){
+    stringArray[i] = NULL;
+    stringArray[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+    if (stringArray[i] == NULL){
+      printf("Memory allocation error!\n");
+      exit(-1);
+    }
+  }
+
+  return stringArray;
+}
+
+void freeStringArray(char** stringArray, int numberOfEntries){
+
+  for (int i = 0; i < numberOfEntries; i++)
+    free(stringArray[i]);
+
+  free(stringArray);
+}
+
+void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int type){
+
+  char header[HEADER_SIZE] = {0};
+  char** maxTempStrings = allocateStringArray(numberOfEntries);
+  char** minTempStrings = allocateStringArray(numberOfEntries);
+  char** rangeStrings = allocateStringArray(numberOfEntries);
+
+  top_t* maxTempPointer = NULL;
+  top_t* minTempPointer = NULL;
+    top_t* aux = NULL;
+    int counter = 0;
+  top_t* rangePointer = NULL;
+
+  if (type == COUNTRY)
+    sprintf(header, "Top-%d countries:\n\n\t| Hottest\t\t\t\t\t\t| Coldest\t\t\t\t\t\t| Most Extreme\n", numberOfEntries);
+  if (type == CITY)
+    sprintf(header, "Top-%d cities:\n\n\t| Hottest\t\t\t\t\t\t| Coldest\t\t\t\t\t\t| Most Extreme\n", numberOfEntries);
+
+  maxTempPointer = tempHead;
+  rangePointer = rangeHead;
+  //setting up the pointer to the minimum temperature entries
+  //ex: if the number of entries is 3, the minTempPointer points to the 3rd to last entry of the list
+  minTempPointer = tempHead;
+  aux = tempHead;
+  while (aux->next != NULL){
+    aux = aux->next;
+    counter++;
+    if (counter >= numberOfEntries)
+      minTempPointer = minTempPointer->next;
+  }
+
+  for (int i = 0; i < numberOfEntries; i++){
+    sprintf(maxTempStrings[i], "%s", maxTempPointer->name);
+    sprintf(minTempStrings[numberOfEntries - 1 - i], "%s", minTempPointer->name);
+    sprintf(rangeStrings[i], "%s", rangePointer->name);
+    maxTempPointer = maxTempPointer->next;
+    minTempPointer = minTempPointer->next;
+    rangePointer = rangePointer->next;
+  }
+
+  printf("%s\n", header);
+  for (int i = 0; i < numberOfEntries; i++){
+    printf("%d.\t", i + 1);
+
+    printf("%s", maxTempStrings[i]);
+    for (int j = 0; j < 56 - strlen(maxTempStrings[i]); j++)
+      printf(" ");
+    printf("%s", minTempStrings[numberOfEntries - 1 - i]);
+    for (int j = 0; j < 56 - strlen(minTempStrings[numberOfEntries - 1 - i]); j++)
+      printf(" ");
+    printf("%s\n", rangeStrings[i]);
+
+  }
+
+
+  getchar();
+
+}
+
 void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
 
   int numberOfEntries = getNumberOfEntries();
-
   //has the countries sorted by their medium temperature
   top_t* tempHead = NULL;
   //has the countries sorted by their temperature range
   top_t* rangeHead = NULL;
 
-  top_t data;
+  yearlyTemp_createSortedLists(filtCountriesHead, sampleYear, &tempHead, &rangeHead);
 
+  printYearlyTemp(tempHead, rangeHead, numberOfEntries, COUNTRY);
 
+  tempHead = yearlyTemp_freeSortedList(tempHead);
+  rangeHead = yearlyTemp_freeSortedList(rangeHead);
 
 }
 
 void yearlyTempCities(node_t* filtCitiesHead, int sampleYear){
 
+  int numberOfEntries = getNumberOfEntries();
+  //has the countries sorted by their medium temperature
+  top_t* tempHead = NULL;
+  //has the countries sorted by their temperature range
+  top_t* rangeHead = NULL;
+
+  yearlyTemp_createSortedLists(filtCitiesHead, sampleYear, &tempHead, &rangeHead);
+
+  printYearlyTemp(tempHead, rangeHead, numberOfEntries, CITY);
+
+  tempHead = yearlyTemp_freeSortedList(tempHead);
+  rangeHead = yearlyTemp_freeSortedList(rangeHead);
+
 }
 
 //######################################################
 
-void globalTempGlobal(node_t* filtCountriesHead, node_t* filtCitiesHead){
+void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
+
+  int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
+
+  system("clear");
+
+  printf("%s", header);
+
+  for (int i = 0; i < 5; i++){
+    if (tempChangeArray[i] != 1000.0f)
+      printf(" %d  | %.2f\n", tempChangeYears[i], tempChangeArray[i]);
+  }
+
+  getchar();
 
 }
 
-void globalTempCountry(node_t* filtCountriesHead, node_t* filtCitiesHead){
+float getMovingAverage(node_t* startPtr, node_t* targetPtr){
+
+  float carryAdder = 0.0f;
+  int counter = 0;
+  float movingAverage = 0.0f;
+
+
+  while (startPtr != targetPtr->next){
+    carryAdder += startPtr->data.temp;
+    counter++;
+    startPtr = startPtr->next;
+  }
+
+  movingAverage = ((float)carryAdder / (float)counter);
+
+  return movingAverage;
+}
+
+void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
+
+  node_t* startPtr = NULL;
+  node_t* targetPtr = NULL;
+
+  int counter = 0;
+  int currMonth = 0;
+  int currYear = 0;
+
+  float movingAverage = 0.0f;
+  float minTemp = 1000.0f;
+  float maxTemp = -1000.0f;
+  int minTempYear = 0;
+  int maxTempYear = 0;
+  float tempChange = 0.0f;
+
+  int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
+  float tempChangeArray[5] = {1000.0f};
+
+  char header[HEADER_SIZE] = {0};
+
+  sprintf(header, "Global Temperature Analisis\n\n Until | Temperature change\n");
+
+  startPtr = filtCountriesHead;
+  targetPtr = filtCountriesHead;
+  currMonth = filtCountriesHead->data.month;
+  currYear = filtCountriesHead->data.year;
+
+  //initially moving the target pointer to the correct place (numMonths months forward)
+  while (counter < numMonths){
+    if (targetPtr->next->data.month != currMonth || targetPtr->next->data.year != currYear){
+      counter++;
+    }
+    targetPtr = targetPtr->next;
+    currMonth = targetPtr->data.month;
+    currYear = targetPtr->data.year;
+  }
+
+  while (targetPtr->next != NULL){
+
+    movingAverage = getMovingAverage(startPtr, targetPtr);
+
+    if (movingAverage < minTemp){
+      minTemp = movingAverage;
+      minTempYear = currYear;
+    }
+    if (movingAverage > maxTemp){
+      maxTemp = movingAverage;
+      maxTempYear = currYear;
+    }
+
+    //getting the new starting pointer (moving it to the beggining of the next month)
+    currMonth = startPtr->data.month;
+    currYear = startPtr->data.year;
+    while (startPtr->data.month == currMonth && startPtr->data.year == currYear)
+      startPtr = startPtr->next;
+
+    //getting the new target pointer (moving it to the end of the next month)
+    currMonth = targetPtr->next->data.month;
+    currYear = targetPtr->next->data.year;
+    while (targetPtr->next->data.month == currMonth && targetPtr->next->data.year == currYear){
+      targetPtr = targetPtr->next;
+      if (targetPtr->next == NULL)
+        break;
+    }
+
+    for (int i = 0; i < 5; i++){
+      if (currYear == tempChangeYears[i]){
+        tempChange = maxTemp - minTemp;
+        if (maxTempYear < minTempYear)
+          tempChange *= -1.0f;
+        tempChangeArray[i] = tempChange;
+      }
+    }
+  }
+
+  printGlobalTemp(tempChangeArray, header);
 
 }
 
-void globalTempCity(node_t* filtCountriesHead, node_t* filtCitiesHead){
+void globalTempCountry(node_t* filtCountriesHead, int numMonths){
+
+}
+
+void globalTempCity(node_t* filtCitiesHead, int numMonths){
 
 }

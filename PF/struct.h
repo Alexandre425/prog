@@ -51,3 +51,5 @@ typedef struct top{
   float range;
   struct top* next;
 } top_t;
+
+//n

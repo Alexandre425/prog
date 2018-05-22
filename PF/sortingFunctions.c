@@ -257,7 +257,7 @@ int findIndex(data1 data ){
 top_t* yearlyTemp_getNewNode(top_t data){
 
   top_t* newNode = NULL;
-  newNode = (top_t*)malloc(sizeof(node_t));
+  newNode = (top_t*)malloc(sizeof(top_t));
   if (newNode == NULL){
     printf("Memory allocation error!\n");
     exit (EXIT_FAILURE);
@@ -307,4 +307,140 @@ top_t* yearlyTemp_sortedInsertTemp(top_t* head, top_t* newNode){
     return head;
   }
 
+}
+
+top_t* yearlyTemp_sortedInsertRange(top_t* head, top_t* newNode){
+
+  top_t* aux = NULL;
+
+  //if there is no head
+  if (head == NULL){
+    return newNode;
+  }
+
+  //if the new node has a higher temperature range (if it belongs before the list head)
+  if (newNode->range > head->range){
+    newNode->next = head;
+    return newNode;
+  }
+
+  //traversing the list until aux->next has a lower temperature
+  aux = head;
+  while (aux->next != NULL){
+    if (newNode->range > aux->next->range)
+      break;
+    aux = aux->next;
+  }
+
+  //if we are inserting at the end of the list
+  if (aux->next == NULL){
+    aux->next = newNode;
+    return head;
+  }
+  //if we are inserting in the middle of the list
+  else{
+    newNode->next = aux->next;
+    aux->next = newNode;
+    return head;
+  }
+}
+
+top_t yearlyTemp_getInfoByName(node_t* sampleYearPointer, char* name){
+
+  node_t* aux = sampleYearPointer;
+
+  int sampleYear = sampleYearPointer->data.year;
+  top_t data;
+
+  float carryAdder = 0.0f;
+  int counter = 0;
+  float maxTemp = -1000.0f, minTemp = 1000.0f;
+
+  while (aux->data.year == sampleYear && aux->next != NULL){
+    if (strstr(aux->data.name, name) != NULL){
+      carryAdder += aux->data.temp;
+      counter++;
+
+      if (aux->data.temp < minTemp)
+        minTemp = aux->data.temp;
+      if (aux->data.temp > maxTemp)
+        maxTemp = aux->data.temp;
+    }
+    aux = aux->next;
+  }
+
+  strcpy(data.name, name);
+  data.temp = ((float)carryAdder / (float)counter);
+  data.range = maxTemp - minTemp;
+  data.next = NULL;
+
+  return data;
+}
+
+void yearlyTemp_createSortedLists(node_t* head, int sampleYear, top_t** tempHead, top_t** rangeHead){
+
+  node_t* aux = NULL;
+  node_t* sampleYearPointer = NULL;
+
+  top_t* aux2 = NULL;
+  top_t data;
+  top_t* newNodeTemp = NULL;
+  top_t* newNodeRange = NULL;
+
+  //getting the pointer to the first occurrence of the year being sampled
+  aux = head;
+  while (aux != NULL){
+    if (aux->data.year == sampleYear){
+      sampleYearPointer = aux;
+      break;
+    }
+    else
+      aux = aux->next;
+  }
+  //if the sample year is not included in the list
+  if (aux == NULL){
+    system("clear");
+    printf("The selected sample year is not present in the filtered data!\n");
+    sleep(3);
+    *tempHead = NULL;
+    *rangeHead = NULL;
+    return;
+  }
+
+  aux = sampleYearPointer;
+  while (aux->data.year == sampleYear && aux->next != NULL){
+    //searching for the name of a main list entry in the top_t median temp. list (could be either list)
+    //if we find it (which means we already have data on that specific country or city)
+    aux2 = *tempHead;
+    while (aux2 != NULL){
+      if (strstr(aux2->name, aux->data.name) != NULL){
+        break;
+      }
+      else
+        aux2 = aux2->next;
+    }
+    //if we don't find it, we get the info on that country or city and insert it
+    if (aux2 == NULL){
+      data = yearlyTemp_getInfoByName(sampleYearPointer, aux->data.name);
+      newNodeTemp = yearlyTemp_getNewNode(data);
+      newNodeRange = yearlyTemp_getNewNode(data);
+      *tempHead = yearlyTemp_sortedInsertTemp(*tempHead, newNodeTemp);
+      *rangeHead = yearlyTemp_sortedInsertRange(*rangeHead, newNodeRange);
+    }
+    //after that, we move on to the next entry on the list
+    aux = aux->next;
+  }
+
+}
+
+top_t* yearlyTemp_freeSortedList(top_t* head){
+
+  top_t* aux = head;
+  while (aux != NULL){
+    aux = aux->next;
+    free(head);
+    head = aux;
+  }
+  //head will always be NULL
+  return head;
 }

@@ -131,9 +131,28 @@ top_t* yearlyTemp_sortedInsertTemp(top_t*, top_t*);
 
 //does a sorted insertion of a new node in the tmp. range list
 //returns the (possibly new) head of the list
-//1. head - the head of the top list
+//1. head - the head of the top_t list
 //2. newNode - the new node to be inserted
 top_t* yearlyTemp_sortedInsertRange(top_t*, top_t*);
+
+//gets the information on a country or city's temperature on a specific year
+//returns a top_t struct with its name, median temp. and temp. range
+//1. sampleYearPointer - the pointer to the first entry for the sample year
+//2. name - the name of the country or city to search for
+top_t yearlyTemp_getInfoByName(node_t*, char*);
+
+//creates sorted median and temperature range lists for the Yearly
+//Temperature menu, for a specific year
+//1. head - the head of the list (city or country)
+//2. sampleYear - the year being sampled
+//3. tempHead - the head of the median temp. top_t list
+//4. rangeHead - the head of the temp. range top_t list
+void yearlyTemp_createSortedLists(node_t*, int, top_t**, top_t**);
+
+//frees a top_t list
+//returns the new head (NULL)
+//1. head - the top_t list head
+top_t* yearlyTemp_freeSortedList(top_t*);
 
 //############################################################
 //DECLARATION OF MENU FUNCTIONS
@@ -167,10 +186,10 @@ void resetFilter(node_t*, node_t*, node_t**, node_t**);
 //2. filtCitiesHead - the head of the filtered city list
 void tempHistoryMenu(node_t*, node_t*);
 
-  //gets the size of string page to be allocated
+  //gets the size of the struct array to be allocated
   int getAllocSize(int, int);
   //prints the temperature history in a 20 entry page
-  void printTempHistory(hist*, char[HEADER_SIZE],int);
+  void printTempHistory(hist*, char[HEADER_SIZE], int);
 
 void tempHistoryGlobal(node_t*, int);
 void tempHistoryCountry(node_t*, int);
@@ -183,6 +202,10 @@ void tempHistoryCity(node_t*, int);
 //2. filtCitiesHead - the head of the filtered city list
 void yearlyTempMenu(node_t*, node_t*);
 
+  //prints the top x list of countries or cities, based on the
+  //sorted median temp. and temp. range lists
+  void printYearlyTemp(top_t*, top_t*, int, int);
+
 void yearlyTempCountries(node_t*, int);
 void yearlyTempCities(node_t*, int);
 
@@ -193,9 +216,12 @@ void yearlyTempCities(node_t*, int);
 //2. filtCitiesHead - the head of the filtered city list
 void globalTempMenu(node_t*, node_t*);
 
-void globalTempGlobal(node_t*, node_t*);
-void globalTempCountry(node_t*, node_t*);
-void globalTempCity(node_t*, node_t*);
+  //prints the temperature change in the 5 defined years
+  void printGlobalTemp(float[5], char[HEADER_SIZE]);
+
+void globalTempGlobal(node_t*, int);
+void globalTempCountry(node_t*, int);
+void globalTempCity(node_t*, int);
 
 //gets a sampling period for the temperature history menu
 //returns the input period
@@ -205,6 +231,6 @@ int getSamplePeriod();
 //returns the input year
 int getSampleYear();
 
-//gets the ammount of years to calculate the moving average with
-//returns the ammount of years
-int getNumYears();
+//gets the ammount of months to calculate the moving average with
+//returns the ammount of months
+int getNumMonths();
