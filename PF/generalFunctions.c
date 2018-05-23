@@ -1,3 +1,6 @@
+#include<SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,7 +67,8 @@ void openFiles(int mode, char fileNames[2][FILE_NAME_SIZE], FILE** countriesFile
 
 void closeFiles(FILE* countriesFile, FILE* citiesFile){
 
-  printf("Closing files...\n");
-  fclose(countriesFile);
-  fclose(citiesFile);
+  if (citiesFile != NULL)
+    fclose(citiesFile);
+  if (countriesFile != NULL)
+    fclose(countriesFile);
 }

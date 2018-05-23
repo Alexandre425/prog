@@ -1,3 +1,6 @@
+#include<SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +10,7 @@
 
 extern int minYear;
 extern int maxYear;
+int numberOfCities;
 
 ListInfo getFileInfo(FILE* file){
 
@@ -67,6 +71,44 @@ node_t** allocateAuxArray(int range){
   return array;
 }
 
+node_t** createGraphicalAuxArray(node_t* head){
+
+  node_t** auxArray = NULL;
+  node_t* aux = NULL;
+  int counter = 1;
+  int index = 0;
+
+  aux = head;
+  while (aux->next != NULL){
+    if (strcmp(aux->data.name, aux->next->data.name) != 0)
+      counter++;
+    aux = aux->next;
+  }
+
+  numberOfCities = counter;
+
+  auxArray = (node_t**)calloc(counter, sizeof(node_t*));
+  if (auxArray == NULL){
+    printf("Memory allocation error!\n");
+    exit (EXIT_FAILURE);
+  }
+
+  auxArray[index] = head;
+  index++;
+
+  aux = head;
+  while (aux->next != NULL){
+    if (strcmp(aux->data.name, aux->next->data.name) != 0){
+      auxArray[index] = aux->next;
+      index++;
+    }
+    aux = aux->next;
+  }
+
+  return auxArray;
+
+}
+
 void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** countriesYearArray,
   FILE* citiesFile, node_t** citiesHead, node_t** citiesYearArray){
 
@@ -89,6 +131,7 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
     sscanf(buffer, "%d-%d-01,%f,%f,%[^\r]", &data.year, &data.month, &data.temp,
       &deviation, data.name);
     //if the data pulled from the file has a temperature
+    //(done to prevent creating a new node with no data)
     if (data.temp != 1000.0f){
       newNode = getNewNode(data, pos);
       *countriesHead = sortedInsert(*countriesHead, countriesYearArray, newNode);
@@ -97,8 +140,6 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
   rewind(countriesFile);
 
   //creating the city list
-  //ignoring the first line
-  fgets(buffer, BUFFER_SIZE, citiesFile);
   while (fgets(buffer, BUFFER_SIZE, citiesFile) != NULL){
     memcpy(&data, &cmp, sizeof(temp));
     sscanf(buffer, "%d-%d-01,%f,%f,%[^,],%[^,],%f%c,%f%c", &data.year, &data.month,
@@ -437,7 +478,7 @@ void yearlyTemp_createSortedLists(node_t* head, int sampleYear, top_t** tempHead
       aux = aux->next;
   }
   //if the sample year is not included in the list
-  if (aux == NULL){
+  if (aux == NULL || aux->next == NULL){
     system("clear");
     printf("The selected sample year is not present in the filtered data!\n");
     sleep(3);

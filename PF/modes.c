@@ -1,3 +1,6 @@
+#include<SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,4 +50,34 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
 
 void visualMode(FILE* citiesFile){
 
+  ListInfo citiesInfo;
+  node_t* citiesHead = NULL;
+  node_t** auxArray = NULL;
+
+  graph* SDL = malloc(sizeof(graph));
+  if (SDL == NULL){
+    printf("Memory allocation error!\n");
+    exit (EXIT_FAILURE);
+  }
+
+  //loading the file onto a list
+  citiesHead = loadCityList(citiesFile);
+  //getting an auxiliary array of pointers to the first entry of each city
+  auxArray = createGraphicalAuxArray(citiesHead);
+
+  //initializing everything SDL related
+  initEverything(SDL);
+
+  //getting the information about the files
+  citiesInfo = getFileInfo(citiesFile);
+
+  //setting the global variables to the minimum and maximum years in each file
+  minYear = citiesInfo.minYear;
+  maxYear = citiesInfo.maxYear;
+
+
+  mainLoop(citiesHead, auxArray, SDL);
+
+  citiesHead = freeSortedList(citiesHead);
+  free(auxArray);
 }

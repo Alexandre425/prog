@@ -1,3 +1,6 @@
+#include<SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -248,7 +251,7 @@ int getNumMonths (){
   while (numMonths <= 0 || numMonths > 1000){
     buffer[0] = '\0';
     system("clear");
-    printf("\nInsert the number of months for the Moving Average calculation: ");
+    printf("Insert the number of months for the Moving Average calculation: ");
     fgets(buffer, BUFFER_SIZE, stdin);
     sscanf(buffer, "%d", &numMonths);
 
@@ -852,7 +855,7 @@ int getNumberOfEntries(){
   while (numberOfEntries <= 0 || numberOfEntries > 20){
     buffer[0] = '\0';
     system("clear");
-    printf("\nInsert the number of entries (1-20) to be shown on the list: ");
+    printf("Insert the number of entries (1-20) to be shown on the list: ");
     fgets(buffer, BUFFER_SIZE, stdin);
     sscanf(buffer, "%d", &numberOfEntries);
 
@@ -968,8 +971,9 @@ void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
 
   yearlyTemp_createSortedLists(filtCountriesHead, sampleYear, &tempHead, &rangeHead);
 
-  if (tempHead == NULL || rangeHead == NULL)
+  if (tempHead == NULL || rangeHead == NULL){
     return;
+  }
 
   printYearlyTemp(tempHead, rangeHead, numberOfEntries, COUNTRY);
 
@@ -1061,10 +1065,48 @@ median* getMedianTempByMonth(node_t* head, int* lastIndex){
 
 }
 
-void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
+median* getMedianTempByName(node_t* head, int* lastIndex, char name[BUFFER_SIZE]){
 
-  int lastIndex = 0;
-  median* medianTempByMonth = getMedianTempByMonth(filtCountriesHead, &lastIndex);
+  int counter = 0;
+  node_t* aux = NULL;
+  median* medianArray = NULL;
+
+  int index = 0;
+
+  //getting the allocation size
+  aux = head;
+  while (aux != NULL){
+    //detecting a change in date, meaning we must allocate for one more month
+    if (strstr(aux->data.name, name) != NULL);
+      counter++;
+    aux = aux->next;
+  }
+
+  *lastIndex = counter;
+
+  //allocating the array (one entry for each different entry for a name in the data)
+  medianArray = (median*)malloc(sizeof(median) * counter);
+  if (medianArray == NULL){
+    printf("Memory alocation error!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  aux = head;
+  counter = 0;
+  while (aux != NULL){
+    if (strstr(aux->data.name, name) != NULL){
+      medianArray[index].year = aux->data.year;
+      medianArray[index].month = aux->data.month;
+      medianArray[index].temp = aux->data.temp;
+      index++;
+    }
+    aux = aux->next;
+  }
+
+  return medianArray;
+}
+
+float* getMovingAverage(median* medianTempByMonth, int numMonths, int lastIndex){
 
   int startIndex = 0;
   int targetIndex = 0;
@@ -1081,12 +1123,11 @@ void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
   float tempChange = 0.0f;
 
   int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
-  float tempChangeArray[5] = {0.0f};
-
-  char header[HEADER_SIZE] = {0};
-
-  sprintf(header, "Global Temperature Analisis\n\n Until | Temperature change\n");
-
+  float* tempChangeArray = (float*)calloc(5, sizeof(float));
+  if (tempChangeArray == NULL){
+    printf("Memory allocation error!\n");
+    exit (EXIT_FAILURE);
+  }
 
   targetIndex = startIndex + numMonths - 1;
   while (targetIndex < lastIndex){
@@ -1125,16 +1166,108 @@ void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
     targetIndex++;
   }
 
+  return tempChangeArray;
+}
+
+void globalTempGlobal(node_t* filtCountriesHead, int numMonths){
+
+  int lastIndex = 0;
+  median* medianTempByMonth = getMedianTempByMonth(filtCountriesHead, &lastIndex);
+  float* tempChangeArray = getMovingAverage(medianTempByMonth, numMonths, lastIndex);
+
+  char header[HEADER_SIZE] = {0};
+  sprintf(header, "Global Temperature Analisis\n\n Until | Temperature change\n");
+
   printGlobalTemp(tempChangeArray, header);
 
   free(medianTempByMonth);
+  free(tempChangeArray);
 
 }
 
 void globalTempCountry(node_t* filtCountriesHead, int numMonths){
 
+  int lastIndex = 0;
+  node_t* aux = NULL;
+
+  char buffer[BUFFER_SIZE] = {0};
+  int foundName = 0;
+
+  system("clear");
+  printf("Insert the name of a country to get it's temperature change\nNote: The name is case-sensitive!\nCountry: ");
+  fgets(buffer, BUFFER_SIZE, stdin);
+  strtok(buffer, "\n");
+
+  //finding the name on the list
+  aux = filtCountriesHead;
+  while (aux != NULL){
+    if (strstr(aux->data.name, buffer) != NULL){
+      strcpy(buffer, aux->data.name);
+      foundName = 1;
+      break;
+    }
+    else
+      aux = aux->next;
+  }
+
+  if (foundName == 0){
+    printf("Could not find a country named %s\n", buffer);
+    sleep(3);
+    return;
+  }
+
+  median* medianTempByMonth = getMedianTempByName(filtCountriesHead, &lastIndex, buffer);
+  float* tempChangeArray = getMovingAverage(medianTempByMonth, numMonths, lastIndex);
+
+  char header[HEADER_SIZE] = {0};
+  sprintf(header, "Global Temperature Analisis for %s\n\n Until | Temperature change\n", buffer);
+
+  printGlobalTemp(tempChangeArray, header);
+
+  free(medianTempByMonth);
+  free(tempChangeArray);
 }
 
 void globalTempCity(node_t* filtCitiesHead, int numMonths){
+
+  int lastIndex = 0;
+  node_t* aux = NULL;
+
+  char buffer[BUFFER_SIZE] = {0};
+  int foundName = 0;
+
+  system("clear");
+  printf("Insert the name of a city to get it's temperature change\nNote: The name is case-sensitive!\nCity: ");
+  fgets(buffer, BUFFER_SIZE, stdin);
+  strtok(buffer, "\n");
+
+  //finding the name on the list
+  aux = filtCitiesHead;
+  while (aux != NULL){
+    if (strstr(aux->data.name, buffer) != NULL){
+      strcpy(buffer, aux->data.name);
+      foundName = 1;
+      break;
+    }
+    else
+      aux = aux->next;
+  }
+
+  if (foundName == 0){
+    printf("Could not find a city named %s\n", buffer);
+    sleep(3);
+    return;
+  }
+
+  median* medianTempByMonth = getMedianTempByName(filtCitiesHead, &lastIndex, buffer);
+  float* tempChangeArray = getMovingAverage(medianTempByMonth, numMonths, lastIndex);
+
+  char header[HEADER_SIZE] = {0};
+  sprintf(header, "Global Temperature Analisis for %s\n\n Until | Temperature change\n", buffer);
+
+  printGlobalTemp(tempChangeArray, header);
+
+  free(medianTempByMonth);
+  free(tempChangeArray);
 
 }

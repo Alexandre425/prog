@@ -52,9 +52,18 @@ typedef struct top{
   struct top* next;
 } top_t;
 
-//n
+//
 typedef struct {
   int year;
   int month;
   float temp;
 } median;
+
+typedef struct {
+  SDL_Window* window;
+  SDL_Renderer* renderer;
+  TTF_Font* font;
+  TTF_Font* titleFont;
+  SDL_Surface* image[2];
+  SDL_Event event;
+} graph;

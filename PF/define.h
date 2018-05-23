@@ -7,6 +7,14 @@
 #define CITY 1
 #define true 1
 
+#define WINDOW_POSX 150
+#define WINDOW_POSY 80
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 650
+
+#define MAP_WIDTH 1000
+#define MAP_HEIGHT 500
+
 //############################################################
 //DECLARATION OF THE MODE FUNCTIONS
 //
@@ -76,6 +84,11 @@ ListInfo getListInfo(node_t*);
 //1. range - year range of the file
 node_t** allocateAuxArray(int);
 
+//analizes the list and allocates an array of pointers to the
+//first entry on each city on the list
+//returns the pointer to the allocated array
+node_t** createGraphicalAuxArray(node_t*);
+
 //creates a sorted copy of the data files in memory
 //1. *countriesFile - the file pointer to the country file
 //2. **countriesHead - the head of the country list
@@ -84,6 +97,11 @@ node_t** allocateAuxArray(int);
 //5. **citiesHead - the head of the city list
 //6. **citiesYearArray - the auxiliary year array of pointers
 void createSortedLists(FILE*, node_t**, node_t**, FILE*, node_t**, node_t**);
+
+//loads the city file into a list
+//returns the loaded list
+//1. *citiesFile - the file pointer to the cities file
+node_t* loadCityList(FILE*);
 
 //frees the sorted copies of the data files in memory
 //returns the new head (which will be NULL)
@@ -217,7 +235,14 @@ void yearlyTempCities(node_t*, int);
 void globalTempMenu(node_t*, node_t*);
 
   //prints the temperature change in the 5 defined years
-  void printGlobalTemp(float[5], char[HEADER_SIZE]);
+  void printGlobalTemp(float*, char[HEADER_SIZE]);
+  //returns an array with the medium global temperature each month
+  median* getMedianTempByMonth(node_t*, int*);
+  //returns an array with the temperature for a country/city each month
+  median* getMedianTempByName(node_t*, int*, char[BUFFER_SIZE]);
+  //returns the temperature change in the 5 defined years using
+  //the moving average calculation
+  float* getMovingAverage(median*, int, int);
 
 void globalTempGlobal(node_t*, int);
 void globalTempCountry(node_t*, int);
@@ -236,9 +261,44 @@ int getSampleYear();
 int getNumMonths();
 
 //############################################################
-//DECLARATION OF MENU FUNCTIONS
+//DECLARATION OF GRAPHICAL FUNCTIONS
 //
-//functions present in 'menuFunctions'
-//used for user interaction, all of them being connected by
-//'mainMenu'.
+//functions present in 'graphicalFunctions'
+//used for drawing on a window and processing events like
+//key presses
 //############################################################
+
+//initializes all SDL-related things, like images, fonts, the window, etc.
+//1. SDL - the SDL struct
+void initEverything(graph*);
+
+//the main loop of the graphical mode, runs the other functions
+//1. head - the head of the city list
+//2. auxArray - the auxiliary array of pointers
+//3. SDL - the SDL struct
+void mainLoop(node_t*, node_t**, graph*);
+
+//renders the greeting menu
+//1. SDL - the SDL struct
+void renderGreetingMenu(graph*);
+
+//the loop which draws the map and the dots with the temperatures
+//returns 1 if the user chose to quit the program while it was running
+//1. head - the head of the city list
+//2. auxArray - the auxiliary array of pointers
+//3. SDL - the SDL struct
+int mapLoop(node_t*, node_t**, graph*);
+
+//renders the map
+//1. SDL - the SDL struct
+void renderMap(graph*);
+
+//renders the minimum and maximum years on the lower corners of the map
+//1. SDL - the SDL struct
+void renderYears(graph*);
+
+//pauses the map animation
+//1. SDL - the SDL struct
+//2. quit - detects if the user quits the program (while paused)
+//3. ret - detects if the user returns to the main menu (while paused)
+void mapLoopPause(graph*, int*, int*);
