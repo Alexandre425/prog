@@ -10,6 +10,10 @@
 
 extern int minYear;
 extern int maxYear;
+
+extern float minPointTemp;
+extern float maxPointTemp;
+
 int numberOfCities;
 
 ListInfo getFileInfo(FILE* file){
@@ -192,6 +196,83 @@ node_t* loadCityList(FILE* citiesFile){
   rewind(citiesFile);
 
   return citiesHead;
+}
+
+node_t* createMedianTempCityList(node_t* citiesHead){
+
+  node_t* aux = NULL;
+  node_t* medianListHead = NULL;
+  node_t* aux2 = NULL;
+  node_t* newNode = NULL;
+
+  int year = 0;
+
+  float carryAdder = 0.0f;
+  int counter = 0;
+  float medianTemp = 0.0f;
+
+  temp data = {0, 0, 0.0f, ""};
+  data2 pos;
+
+  for (year = minYear; year <= maxYear; year++){
+
+    aux = citiesHead;
+    while (aux != NULL){
+      //found data on the year we are currently doing the median on
+      if (aux->data.year == year){
+        //copying the city's coordinates to later draw it
+        pos.lat = aux->pos.lat;
+        pos.lon = aux->pos.lon;
+        pos.cLat = aux->pos.cLat;
+        pos.cLon = aux->pos.cLon;
+        data.year = year;
+
+        //calculating the average temperature for a city in that year
+        carryAdder = 0.0f;
+        counter = 0;
+        while (aux->data.year == year){
+          carryAdder += aux->data.temp;
+          counter++;
+          aux = aux->next;
+          if (aux == NULL)
+            break;
+        }
+        medianTemp = ((float)carryAdder / (float)counter);
+        data.temp = medianTemp;
+        //getting a new node with the temperature, coordinates and year
+        newNode = getNewNode(data, pos);
+        //inserting the node
+        if (medianListHead == NULL){
+          medianListHead = newNode;
+          aux2 = medianListHead;
+        }
+        else{
+          aux2->next = newNode;
+          aux2 = aux2->next;
+        }
+      }
+      if (aux != NULL)
+        aux = aux->next;
+    }
+  }
+
+  return medianListHead;
+}
+
+void getMinMaxTemp(node_t* pointsHead){
+
+  node_t* aux = NULL;
+
+  minPointTemp = 1000.0f;
+  maxPointTemp = -1000.0f;
+
+  while (aux != NULL){
+    if (aux->data.temp < minPointTemp)
+      maxPointTemp = aux->data.temp;
+    if (aux->data.temp > maxPointTemp)
+      maxPointTemp = aux->data.temp;
+    aux = aux->next;
+  }
 }
 
 node_t* freeSortedList(node_t* head){

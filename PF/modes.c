@@ -11,6 +11,9 @@
 extern int minYear;
 extern int maxYear;
 
+float minPointTemp;
+float maxPointTemp;
+
 void textualMode(FILE* countriesFile, FILE* citiesFile){
 
   //information structs about the lists
@@ -52,7 +55,7 @@ void visualMode(FILE* citiesFile){
 
   ListInfo citiesInfo;
   node_t* citiesHead = NULL;
-  node_t** auxArray = NULL;
+  node_t* pointsHead = NULL;
 
   graph* SDL = malloc(sizeof(graph));
   if (SDL == NULL){
@@ -60,24 +63,26 @@ void visualMode(FILE* citiesFile){
     exit (EXIT_FAILURE);
   }
 
+  //getting the information about the file
+  citiesInfo = getFileInfo(citiesFile);
+  //setting the global variables to the minimum and maximum years in each file
+  minYear = citiesInfo.minYear;
+  maxYear = citiesInfo.maxYear;
   //loading the file onto a list
   citiesHead = loadCityList(citiesFile);
-  //getting an auxiliary array of pointers to the first entry of each city
-  auxArray = createGraphicalAuxArray(citiesHead);
+  //creating a list to easily draw all the points
+  pointsHead = createMedianTempCityList(citiesHead);
+  //getting the minimum and maximum median temperatures for point color determination
+  //these are assigned to global variables
+  getMinMaxTemp(pointsHead);
+  //freeing the first list (will not be needed anymore)
+  citiesHead = freeSortedList(citiesHead);
 
   //initializing everything SDL related
   initEverything(SDL);
 
-  //getting the information about the files
-  citiesInfo = getFileInfo(citiesFile);
+  mainLoop(pointsHead, SDL);
 
-  //setting the global variables to the minimum and maximum years in each file
-  minYear = citiesInfo.minYear;
-  maxYear = citiesInfo.maxYear;
-
-
-  mainLoop(citiesHead, auxArray, SDL);
-
-  citiesHead = freeSortedList(citiesHead);
-  free(auxArray);
+  //freeing the list used for drawing points
+  pointsHead = freeSortedList(pointsHead);
 }

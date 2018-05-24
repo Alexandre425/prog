@@ -15,6 +15,12 @@
 #define MAP_WIDTH 1000
 #define MAP_HEIGHT 500
 
+#define MAX_RED_BLUE 255
+#define MIN_RED_BLUE 48
+#define GREEN 48
+
+#define MARGIN 10
+
 //############################################################
 //DECLARATION OF THE MODE FUNCTIONS
 //
@@ -102,6 +108,18 @@ void createSortedLists(FILE*, node_t**, node_t**, FILE*, node_t**, node_t**);
 //returns the loaded list
 //1. *citiesFile - the file pointer to the cities file
 node_t* loadCityList(FILE*);
+
+//creates a list with the cities' median temperature and coordinates for
+//a year. Each node corresponds to a city in a year, sorted by
+//their years
+//returns the created list's head
+//1. head - the head of the main list
+node_t* createMedianTempCityList(node_t*);
+
+//determines the minimum and maximum temperature point. Used to determine
+//what the "red-est" and "blue-est" points will be
+//1. pointsHead - the point list head
+void getMinMaxTemp(node_t*);
 
 //frees the sorted copies of the data files in memory
 //returns the new head (which will be NULL)
@@ -276,7 +294,7 @@ void initEverything(graph*);
 //1. head - the head of the city list
 //2. auxArray - the auxiliary array of pointers
 //3. SDL - the SDL struct
-void mainLoop(node_t*, node_t**, graph*);
+void mainLoop(node_t*, graph*);
 
 //renders the greeting menu
 //1. SDL - the SDL struct
@@ -287,7 +305,7 @@ void renderGreetingMenu(graph*);
 //1. head - the head of the city list
 //2. auxArray - the auxiliary array of pointers
 //3. SDL - the SDL struct
-int mapLoop(node_t*, node_t**, graph*);
+int mapLoop(node_t*, graph*);
 
 //renders the map
 //1. SDL - the SDL struct
@@ -295,7 +313,21 @@ void renderMap(graph*);
 
 //renders the minimum and maximum years on the lower corners of the map
 //1. SDL - the SDL struct
-void renderYears(graph*);
+//2. barLimits - limits for the bar which will go from one text to the other
+//    essentially defined as a rectangle with the dimensions of the maximum bar size
+void renderYears(graph*, SDL_Rect*);
+
+//renders the bar in between the years which grows with time
+//1. SDL - the SDL struct
+//2. year - the current year, defines the bar's length
+//3. barLimits - the maximum size of the bar
+SDL_Rect renderBar(graph*, int, SDL_Rect barLimits);
+
+//renders the points on the map each year
+//1. SDL - the SDL struct
+//2. year - the current year
+//3. pointsHead - the head of the points lists
+void renderPoints(graph*, int, node_t*);
 
 //pauses the map animation
 //1. SDL - the SDL struct
