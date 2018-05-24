@@ -66,19 +66,24 @@ void initEverything(graph* SDL){
     exit (EXIT_FAILURE);
   }
 
-  //loading the fonts
-  //the regular font
-  SDL->font = TTF_OpenFont("kenyancoffee.ttf", 24);
-  if (SDL->font == NULL){
-    printf("%s\n", SDL_GetError());
-    exit (EXIT_FAILURE);
-  }
-  //the title font
+  //loading the font
   SDL->font = TTF_OpenFont("kenyancoffee.ttf", 56);
   if (SDL->font == NULL){
     printf("%s\n", SDL_GetError());
     exit (EXIT_FAILURE);
   }
+
+}
+
+void freeEverything(graph* SDL){
+
+  TTF_CloseFont(SDL->font);
+  SDL_FreeSurface(SDL->image[0]);
+  SDL_FreeSurface(SDL->image[1]);
+  SDL_FreeSurface(SDL->image[2]);
+  SDL_DestroyRenderer(SDL->renderer);
+  SDL_DestroyWindow(SDL->window);
+  SDL_Quit();
 
 }
 
@@ -141,7 +146,7 @@ int mapLoop(node_t* pointsHead, graph* SDL){
 
     ret = 0;
     renderMap(SDL);
-    renderYears(SDL, &barLimits);
+    renderYears(SDL, &barLimits, year);
     bar = renderBar(SDL, year, barLimits);
     renderPenguin(SDL, year, bar);
     renderPoints(SDL, year, pointsHead);
@@ -198,12 +203,14 @@ void renderMap(graph* SDL){
   SDL_DestroyTexture(map);
 }
 
-void renderYears(graph* SDL, SDL_Rect* barLimits){
+void renderYears(graph* SDL, SDL_Rect* barLimits, int year){
 
   char startYear[5] = {0};
   char endYear[5] = {0};
+  char currYear[5] = {0};
   sprintf(startYear, "%d", minYear);
   sprintf(endYear, "%d", maxYear);
+  sprintf(currYear, "%d", year);
 
   SDL_Color black = {0, 0, 0};
 
@@ -227,27 +234,40 @@ void renderYears(graph* SDL, SDL_Rect* barLimits){
   //rendering
   SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
 
+  SDL_DestroyTexture(textTexture);
+  SDL_FreeSurface(textSurface);
+
   barLimits->x = MARGIN + rectangle.w + MARGIN;
   barLimits->y = rectangle.y;
 
-  //creating a surface with the text
   textSurface = TTF_RenderText_Blended(SDL->font, endYear, black);
   if (textSurface == NULL){
     printf("%s\n", TTF_GetError());
     exit(EXIT_FAILURE);
   }
-  //creating a texture from the surface
   textTexture = SDL_CreateTextureFromSurface(SDL->renderer, textSurface);
-  //getting the texture size
   SDL_QueryTexture(textTexture, NULL, NULL, &rectangle.w, &rectangle.h);
-  //position to draw the text
   rectangle.x = WINDOW_WIDTH - MARGIN - rectangle.w;
   rectangle.y = MAP_HEIGHT + MARGIN;
-  //rendering
   SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
+
+  SDL_DestroyTexture(textTexture);
+  SDL_FreeSurface(textSurface);
 
   barLimits->w = WINDOW_WIDTH - barLimits->x - MARGIN - rectangle.w - MARGIN;
   barLimits->h = rectangle.h;
+
+
+  textSurface = TTF_RenderText_Blended(SDL->font, currYear, black);
+  if (textSurface == NULL){
+    printf("%s\n", TTF_GetError());
+    exit(EXIT_FAILURE);
+  }
+  textTexture = SDL_CreateTextureFromSurface(SDL->renderer, textSurface);
+  SDL_QueryTexture(textTexture, NULL, NULL, &rectangle.w, &rectangle.h);
+  rectangle.x = (MAP_WIDTH / 2) - (rectangle.w / 2);
+  rectangle.y = MAP_HEIGHT - rectangle.h - MARGIN;
+  SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
 
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);

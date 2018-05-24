@@ -78,12 +78,15 @@ void visualMode(FILE* citiesFile){
   //freeing the first list (will not be needed anymore)
   citiesHead = freeSortedList(citiesHead);
 
-  printf("%f - %f\n", minPointTemp, maxPointTemp);
-
   //initializing everything SDL related
   initEverything(SDL);
 
   mainLoop(pointsHead, SDL);
+
+  //freeing the memory used by SDL
+  freeEverything(SDL);
+  //freeing the SDL struct
+  free(SDL);
 
   //freeing the list used for drawing points
   pointsHead = freeSortedList(pointsHead);

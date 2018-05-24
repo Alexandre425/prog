@@ -63,7 +63,6 @@ typedef struct {
   SDL_Window* window;
   SDL_Renderer* renderer;
   TTF_Font* font;
-  TTF_Font* titleFont;
   SDL_Surface* image[3];
   SDL_Event event;
 } graph;

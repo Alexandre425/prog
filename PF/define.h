@@ -21,7 +21,7 @@
 #define MIN_RED_BLUE 48
 #define GREEN 48
 
-#define CIRCLE_RADIUS 5
+#define CIRCLE_RADIUS 4
 #define M_PI 3.14159265
 
 #define PENGUIN_WIDTH 77
@@ -298,6 +298,10 @@ int getNumMonths();
 //1. SDL - the SDL struct
 void initEverything(graph*);
 
+//frees the memory used by SDL
+//1. SDL - the SDL struct
+void freeEverything(graph*);
+
 //the main loop of the graphical mode, runs the other functions
 //1. head - the head of the city list
 //2. auxArray - the auxiliary array of pointers
@@ -323,7 +327,7 @@ void renderMap(graph*);
 //1. SDL - the SDL struct
 //2. barLimits - limits for the bar which will go from one text to the other
 //    essentially defined as a rectangle with the dimensions of the maximum bar size
-void renderYears(graph*, SDL_Rect*);
+void renderYears(graph*, SDL_Rect*, int);
 
 //renders the bar in between the years which grows with time
 //1. SDL - the SDL struct
@@ -336,6 +340,27 @@ SDL_Rect renderBar(graph*, int, SDL_Rect barLimits);
 //2. year - the current year, used for making the penguin jump
 //3. bar - the bar, used for drawing the penguin on the end
 void renderPenguin(graph*, int, SDL_Rect);
+
+//returns a color corresponding to a temperature
+//uses a linear equation to calculate the red and blue components
+//1. temp -  the temperature for which the color will be returned
+SDL_Color getColor(float);
+
+//returns the position (from the upper corner of the window) where
+//the point will be drawn from the coordinates
+//returns the coordinates (in the form of a rectangle)
+//1. pos - the coordinate struct
+SDL_Rect getPosition(data2);
+
+//draws a filled circle
+//1. _renderer - the SDL renderer
+//2. _circleX - the X coordinate
+//3. _circleY - the Y coordinate
+//4. _circleR - the radius
+//5. _r - the red component of the color
+//6. _g - the green component of the color
+//7. _b - the blue component of the color
+void filledCircleRGBA(SDL_Renderer*, int, int, int, int, int, int);
 
 //renders the points on the map each year
 //1. SDL - the SDL struct

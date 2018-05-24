@@ -11,15 +11,13 @@
 extern int minYear;
 extern int maxYear;
 
-int filteredByInitialDate = 0;
-int filteredBySeason = 0;
-
 void mainMenu (node_t* countriesHead, node_t* citiesHead){
 
   //head pointers to the filtered lists
   node_t* filtCountriesHead = NULL;
   node_t* filtCitiesHead = NULL;
 
+  char buffer[BUFFER_SIZE];
   char c = 0;
 
   //getting working copies of the list in case the user doesn't reset the data filters
@@ -36,8 +34,8 @@ void mainMenu (node_t* countriesHead, node_t* citiesHead){
     printf("4. Global Temperature Analisis\n");
     printf("5. Exit\n");
 
-    c = getchar();
-    getchar();
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%c", &c);
 
     switch (c) {
       case '1':
@@ -70,7 +68,9 @@ void mainMenu (node_t* countriesHead, node_t* citiesHead){
 
 void dataFilterMenu (node_t* countriesHead, node_t* citiesHead, node_t** filtCountriesHead, node_t** filtCitiesHead){
 
+  char buffer[BUFFER_SIZE];
   char c = 0;
+
   while(true) {
 
     system("clear");
@@ -81,31 +81,18 @@ void dataFilterMenu (node_t* countriesHead, node_t* citiesHead, node_t** filtCou
     printf("3. Reset filters\n");
     printf("4. Return to main menu\n");
 
-    c = getchar();
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%c", &c);
 
     switch (c) {
       case '1':
-        if (filteredByInitialDate == 0)
-          initalDateFilter (filtCountriesHead, filtCitiesHead);
-        else{
-          printf("Already filtered! To change the filters, reset them first\n");
-          sleep(3);
-        }
-        filteredByInitialDate = 1;
+        initalDateFilter (filtCountriesHead, filtCitiesHead);
         break;
       case '2':
-        if (filteredBySeason == 0)
-          seasonFilter (filtCountriesHead, filtCitiesHead);
-        else{
-          printf("Already filtered! To change the filters, reset them first\n");
-          sleep(3);
-        }
-          filteredBySeason = 1;
+        seasonFilter (filtCountriesHead, filtCitiesHead);
         break;
       case '3':
         resetFilter (countriesHead, citiesHead, filtCountriesHead, filtCitiesHead);
-        filteredBySeason = 0;
-        filteredByInitialDate = 0;
         break;
       case '4':
         return;
@@ -140,6 +127,7 @@ int getSamplePeriod (){
 
 void tempHistoryMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
+  char buffer[BUFFER_SIZE];
   char c = 0;
   int samplePeriod = 0;
 
@@ -156,8 +144,8 @@ void tempHistoryMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
     printf("4. Change sampling period\n");
     printf("5. Return to main menu\n");
 
-    c = getchar();
-    getchar ();
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%c", &c);
 
     switch (c) {
       case '1':
@@ -206,6 +194,7 @@ int getSampleYear (){
 
 void yearlyTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
+  char buffer[BUFFER_SIZE];
   char c = 0;
   int sampleYear = 0;
 
@@ -221,8 +210,8 @@ void yearlyTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
     printf("3. Change year of analisis\n");
     printf("4. Return to main menu\n");
 
-    c = getchar();
-    getchar();
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%c", &c);
 
     switch (c) {
       case '1':
@@ -266,6 +255,7 @@ int getNumMonths (){
 
 void globalTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
 
+  char buffer[BUFFER_SIZE];
   char c = 0;
   int numMonths = 0;
 
@@ -284,8 +274,8 @@ void globalTempMenu (node_t* filtCountriesHead, node_t* filtCitiesHead){
     printf("4. Change the number of months selected\n");
     printf("5. Return to main menu\n");
 
-    c = getchar();
-    getchar();
+    fgets(buffer, BUFFER_SIZE, stdin);
+    sscanf(buffer, "%c", &c);
 
     switch (c) {
       case '1':
@@ -391,7 +381,9 @@ void deleteSeason(node_t** head, int iniMonth, int finMonth){
 
   aux = *head;
 
-  while (aux->next != NULL){
+  while (aux != NULL){
+    if (aux->next == NULL)
+      break;
     //if the auxiliary pointer's month is within the inserted monthly bracket
     //we go through to the next list entry from the cycle
     if(
@@ -558,7 +550,7 @@ void printTempHistory(hist* histData, char header[HEADER_SIZE], int lines){
     firstEntry += (PAGE_SIZE);
     target += (PAGE_SIZE);
 
-    printf("Press 'a' to go to the next page\n");
+    printf("\nPress 'a' to go to the next page\n");
     printf("Press 'q' to return to the Temperature History Menu\n");
 
     c = 0;
@@ -900,6 +892,7 @@ void freeStringArray(char** stringArray, int numberOfEntries){
 
 void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int type){
 
+  char buffer[BUFFER_SIZE];
   char header[HEADER_SIZE] = {0};
   char** maxTempStrings = allocateStringArray(numberOfEntries);
   char** minTempStrings = allocateStringArray(numberOfEntries);
@@ -910,6 +903,8 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
     top_t* aux = NULL;
     int counter = 0;
   top_t* rangePointer = NULL;
+
+  system("clear");
 
   if (type == COUNTRY)
     sprintf(header, "Top-%d countries:\n\n\t| Hottest\t\t\t\t\t\t| Coldest\t\t\t\t\t\t| Most Extreme\n", numberOfEntries);
@@ -956,9 +951,8 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
   freeStringArray(minTempStrings, numberOfEntries);
   freeStringArray(rangeStrings, numberOfEntries);
 
-
-  getchar();
-
+  printf("\nPress any key to return to the Yearly Temperature Menu\n");
+  fgets(buffer, BUFFER_SIZE, stdin);
 }
 
 void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
@@ -1003,6 +997,7 @@ void yearlyTempCities(node_t* filtCitiesHead, int sampleYear){
 
 void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
 
+  char buffer[BUFFER_SIZE];
   int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
 
   system("clear");
@@ -1014,8 +1009,8 @@ void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
       printf(" %d  | %.2f\n", tempChangeYears[i], tempChangeArray[i]);
   }
 
-  getchar();
-
+  printf("\nPress any key to return to the Global Temperature Analisis Menu\n");
+  fgets(buffer, BUFFER_SIZE, stdin);
 }
 
 median* getMedianTempByMonth(node_t* head, int* lastIndex){
