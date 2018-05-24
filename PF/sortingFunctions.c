@@ -266,9 +266,10 @@ void getMinMaxTemp(node_t* pointsHead){
   minPointTemp = 1000.0f;
   maxPointTemp = -1000.0f;
 
+  aux = pointsHead;
   while (aux != NULL){
     if (aux->data.temp < minPointTemp)
-      maxPointTemp = aux->data.temp;
+      minPointTemp = aux->data.temp;
     if (aux->data.temp > maxPointTemp)
       maxPointTemp = aux->data.temp;
     aux = aux->next;

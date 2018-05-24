@@ -78,6 +78,8 @@ void visualMode(FILE* citiesFile){
   //freeing the first list (will not be needed anymore)
   citiesHead = freeSortedList(citiesHead);
 
+  printf("%f - %f\n", minPointTemp, maxPointTemp);
+
   //initializing everything SDL related
   initEverything(SDL);
 

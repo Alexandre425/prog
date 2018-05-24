@@ -59,6 +59,12 @@ void initEverything(graph* SDL){
     printf("%s\n", SDL_GetError());
     exit (EXIT_FAILURE);
   }
+  //the penguin
+  SDL->image[2] = IMG_Load("Penguin.png");
+  if (SDL->image[2] == NULL){
+    printf("%s\n", SDL_GetError());
+    exit (EXIT_FAILURE);
+  }
 
   //loading the fonts
   //the regular font
@@ -137,6 +143,7 @@ int mapLoop(node_t* pointsHead, graph* SDL){
     renderMap(SDL);
     renderYears(SDL, &barLimits);
     bar = renderBar(SDL, year, barLimits);
+    renderPenguin(SDL, year, bar);
     renderPoints(SDL, year, pointsHead);
 
     while (SDL_PollEvent(&SDL->event)){
@@ -165,8 +172,6 @@ int mapLoop(node_t* pointsHead, graph* SDL){
 
     if (year < maxYear)
       year++;
-
-      printf("%d\n", year);
 
     SDL_RenderPresent(SDL->renderer);
     SDL_Delay(100);
@@ -252,7 +257,7 @@ void renderYears(graph* SDL, SDL_Rect* barLimits){
 SDL_Rect renderBar(graph* SDL, int year, SDL_Rect barLimits){
 
   SDL_Rect bar;
-  SDL_Color color = {160, 192, 255, 255};
+  SDL_Color color = {58, 128, 180, 255};
 
   bar.x = barLimits.x;
   bar.y = barLimits.y;
@@ -263,26 +268,55 @@ SDL_Rect renderBar(graph* SDL, int year, SDL_Rect barLimits){
 
   //setting the color of the rectangle
   SDL_SetRenderDrawColor(SDL->renderer, color.r, color.g, color.b, color.a);
-  //drawing the rectange
+  //drawing the rectangle
   SDL_RenderFillRect(SDL->renderer, &bar);
 
   return bar;
+}
+
+void renderPenguin(graph* SDL, int year, SDL_Rect bar){
+
+  SDL_Texture* penguin;
+  SDL_Rect rectangle;
+
+  rectangle.x = bar.x + bar.w - (PENGUIN_WIDTH / 2);
+  rectangle.y = bar.y;
+  rectangle.w = PENGUIN_WIDTH;
+  rectangle.h = PENGUIN_HEIGHT;
+
+  //jumping every other year to make the penguin appear to be walking
+  if (year % 2 == 0)
+    rectangle.y -= PENGUIN_JUMP_HEIGHT;
+
+  //creating the texture and drawing
+  penguin = SDL_CreateTextureFromSurface(SDL->renderer, SDL->image[2]);
+  SDL_RenderCopy(SDL->renderer, penguin, NULL, &rectangle);
+  //destroying the texture
+  SDL_DestroyTexture(penguin);
+
 }
 
 SDL_Color getColor(float temp){
 
   SDL_Color color = {0, GREEN, 0, 255};
 
-  float redSlope = 0.0f
-  float blueSlope = 0.0f
+  float redSlope = 0.0f;
+  float blueSlope = 0.0f;
+
+  int redB = 0;
+  int blueB = 0;
 
   //determining the function slope
   redSlope = (float)(MAX_RED_BLUE - MIN_RED_BLUE) / (float)(maxPointTemp - minPointTemp);
   blueSlope = (float)(MIN_RED_BLUE - MAX_RED_BLUE) / (float)(maxPointTemp - minPointTemp);
 
+  //determining the offset at x = 0 / temp = 0.0f
+  redB = (int)( MIN_RED_BLUE - ((float)redSlope * minPointTemp) );
+  blueB = (int)( MAX_RED_BLUE - ((float)blueSlope * minPointTemp) );
+
   //getting the color in function of the temperature
-  color.r = redSlope * temp;
-  color.b = blueSlope * temp;
+  color.r = (int)( ((float)redSlope * (float)temp) + redB );
+  color.b = (int)( ((float)blueSlope * (float)temp) + blueB );
 
   return color;
 }
@@ -290,10 +324,50 @@ SDL_Color getColor(float temp){
 SDL_Rect getPosition(data2 pos){
 
   SDL_Rect rectangle;
+  SDL_Rect mapCenter;
 
-  
+  //determining the map center
+  mapCenter.x = MAP_WIDTH / 2;
+  mapCenter.y = MAP_HEIGHT / 2;
+
+  //determining the coordinates in relation to the center of the map
+  rectangle.x = ((float)(MAP_WIDTH / 2) * (float)pos.lon) / 180;
+  rectangle.y = ((float)(MAP_HEIGHT / 2) * (float)pos.lat) / 90;
+
+  //inverting if needed (ex: north is above the center, so the value must be negative)
+  if (pos.cLon == 'W')
+    rectangle.x *= -1;
+  if (pos.cLat == 'N')
+    rectangle.y *= -1;
+
+  //getting the coordinates in relation to the upper left corner
+  rectangle.x = mapCenter.x + rectangle.x;
+  rectangle.y = mapCenter.y + rectangle.y;
 
   return rectangle;
+}
+
+void filledCircleRGBA(SDL_Renderer * _renderer, int _circleX, int _circleY, int _circleR, int _r, int _g, int _b){
+    int off_x = 0;
+    int off_y = 0;
+    float degree = 0.0;
+    float step = M_PI / (_circleR*8);
+
+    SDL_SetRenderDrawColor(_renderer, _r, _g, _b, 255);
+
+    while (_circleR > 0)
+    {
+        for (degree = 0.0; degree < M_PI/2; degree+=step)
+        {
+            off_x = (int)(_circleR * cos(degree));
+            off_y = (int)(_circleR * sin(degree));
+            SDL_RenderDrawPoint(_renderer, _circleX+off_x, _circleY+off_y);
+            SDL_RenderDrawPoint(_renderer, _circleX-off_y, _circleY+off_x);
+            SDL_RenderDrawPoint(_renderer, _circleX-off_x, _circleY-off_y);
+            SDL_RenderDrawPoint(_renderer, _circleX+off_y, _circleY-off_x);
+        }
+        _circleR--;
+    }
 }
 
 void renderPoints(graph* SDL, int year, node_t* pointsHead){
@@ -317,7 +391,7 @@ void renderPoints(graph* SDL, int year, node_t* pointsHead){
 
     color = getColor(aux->data.temp);
     pos = getPosition(aux->pos);
-
+    filledCircleRGBA(SDL->renderer, pos.x, pos.y, CIRCLE_RADIUS, color.r, color.g, color.b);
 
     aux = aux->next;
   }

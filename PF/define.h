@@ -15,11 +15,19 @@
 #define MAP_WIDTH 1000
 #define MAP_HEIGHT 500
 
+#define MARGIN 10
+
 #define MAX_RED_BLUE 255
 #define MIN_RED_BLUE 48
 #define GREEN 48
 
-#define MARGIN 10
+#define CIRCLE_RADIUS 5
+#define M_PI 3.14159265
+
+#define PENGUIN_WIDTH 77
+#define PENGUIN_HEIGHT 90
+#define PENGUIN_JUMP_HEIGHT 7
+
 
 //############################################################
 //DECLARATION OF THE MODE FUNCTIONS
@@ -322,6 +330,12 @@ void renderYears(graph*, SDL_Rect*);
 //2. year - the current year, defines the bar's length
 //3. barLimits - the maximum size of the bar
 SDL_Rect renderBar(graph*, int, SDL_Rect barLimits);
+
+//renders the penguin on the end of the bar
+//1. SDL - the SDL struct
+//2. year - the current year, used for making the penguin jump
+//3. bar - the bar, used for drawing the penguin on the end
+void renderPenguin(graph*, int, SDL_Rect);
 
 //renders the points on the map each year
 //1. SDL - the SDL struct
