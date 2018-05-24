@@ -31,11 +31,9 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   //getting the information about the files needed to set up auxiliary pointers
   countriesInfo = getFileInfo(countriesFile);
   citiesInfo = getFileInfo(citiesFile);
-
   //setting the global variables to the minimum and maximum years in each file
   minYear = countriesInfo.minYear;
   maxYear = countriesInfo.maxYear;
-
   //allocating the auxiliary pointer arrays
   countriesYearArray = allocateAuxArray(countriesInfo.range);
   citiesYearArray = allocateAuxArray(citiesInfo.range);
@@ -43,7 +41,9 @@ void textualMode(FILE* countriesFile, FILE* citiesFile){
   //creating both sorted lists
   createSortedLists(countriesFile, &countriesHead, countriesYearArray, citiesFile, &citiesHead, citiesYearArray);
 
+  //running the main menu loop
   mainMenu(countriesHead, citiesHead);
+
   //freeing all memory still in use
   countriesHead = freeSortedList(countriesHead);
   citiesHead = freeSortedList(citiesHead);
@@ -81,13 +81,13 @@ void visualMode(FILE* citiesFile){
   //initializing everything SDL related
   initEverything(SDL);
 
+  //running the main loop of the program
   mainLoop(pointsHead, SDL);
 
   //freeing the memory used by SDL
   freeEverything(SDL);
   //freeing the SDL struct
   free(SDL);
-
   //freeing the list used for drawing points
   pointsHead = freeSortedList(pointsHead);
 }

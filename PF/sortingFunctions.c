@@ -25,8 +25,10 @@ ListInfo getFileInfo(FILE* file){
   info.minYear = 3000;
   info.maxYear = 0;
 
+  //going through the whole file
   while (fgets(buffer, BUFFER_SIZE, file) != NULL){
     sscanf(buffer, "%d", &year);
+    //determining minimum and maximum years
     if (year < info.minYear && year > 1000)
       info.minYear = year;
     if (year > info.maxYear && year > 1000)
@@ -34,8 +36,9 @@ ListInfo getFileInfo(FILE* file){
   }
   //year > 1000 was done to avoid some apparently wrong data in the file
 
+  //determining the range
   info.range = info.maxYear - info.minYear;
-
+  //returning the pointer to the beggining of the file
   rewind(file);
 
   return info;
@@ -49,6 +52,7 @@ ListInfo getListInfo(node_t* head){
   info.minYear = 3000;
   info.maxYear = 0;
 
+  //same as the above function, but for a list
   while (aux != NULL){
     if (aux->data.year < info.minYear)
       info.minYear = aux->data.year;
@@ -65,6 +69,7 @@ ListInfo getListInfo(node_t* head){
 
 node_t** allocateAuxArray(int range){
 
+  //allocating the auxiliary array
   node_t** array = NULL;
   array = (node_t**)malloc(sizeof(node_t*) * (range + 1));
   if (array == NULL){
@@ -73,44 +78,6 @@ node_t** allocateAuxArray(int range){
   }
 
   return array;
-}
-
-node_t** createGraphicalAuxArray(node_t* head){
-
-  node_t** auxArray = NULL;
-  node_t* aux = NULL;
-  int counter = 1;
-  int index = 0;
-
-  aux = head;
-  while (aux->next != NULL){
-    if (strcmp(aux->data.name, aux->next->data.name) != 0)
-      counter++;
-    aux = aux->next;
-  }
-
-  numberOfCities = counter;
-
-  auxArray = (node_t**)calloc(counter, sizeof(node_t*));
-  if (auxArray == NULL){
-    printf("Memory allocation error!\n");
-    exit (EXIT_FAILURE);
-  }
-
-  auxArray[index] = head;
-  index++;
-
-  aux = head;
-  while (aux->next != NULL){
-    if (strcmp(aux->data.name, aux->next->data.name) != 0){
-      auxArray[index] = aux->next;
-      index++;
-    }
-    aux = aux->next;
-  }
-
-  return auxArray;
-
 }
 
 void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** countriesYearArray,
@@ -156,10 +123,10 @@ void createSortedLists(FILE* countriesFile, node_t** countriesHead, node_t** cou
     }
   }
   rewind(citiesFile);
-
 }
 
 node_t* loadCityList(FILE* citiesFile){
+  //used for the graphical mode
 
   node_t* newNode = NULL;
   node_t* aux = NULL;
@@ -175,6 +142,8 @@ node_t* loadCityList(FILE* citiesFile){
   system("clear");
   printf("Loading files, please wait...\n");
 
+  //simply copying the file onto a list
+  //same process as above, but with tail insertion
   while (fgets(buffer, BUFFER_SIZE, citiesFile) != NULL){
     memcpy(&data, &cmp, sizeof(temp));
     sscanf(buffer, "%d-%d-01,%f,%f,%[^,],%[^,],%f%c,%f%c", &data.year, &data.month,
@@ -183,11 +152,14 @@ node_t* loadCityList(FILE* citiesFile){
 
     if (data.temp != 1000.0f){
       newNode = getNewNode(data, pos);
+      //if there is no head
       if (aux == NULL){
         aux = newNode;
         citiesHead = newNode;
       }
+      //if there is a head
       else{
+        //inserting on the tail
         aux->next = newNode;
         aux = aux->next;
       }
@@ -214,6 +186,7 @@ node_t* createMedianTempCityList(node_t* citiesHead){
   temp data = {0, 0, 0.0f, ""};
   data2 pos;
 
+  //getting the median temperature for each year
   for (year = minYear; year <= maxYear; year++){
 
     aux = citiesHead;
@@ -242,20 +215,22 @@ node_t* createMedianTempCityList(node_t* citiesHead){
         //getting a new node with the temperature, coordinates and year
         newNode = getNewNode(data, pos);
         //inserting the node
+        //if there is no head
         if (medianListHead == NULL){
           medianListHead = newNode;
           aux2 = medianListHead;
         }
+        //if there is a head, we do a tail insertion
         else{
           aux2->next = newNode;
           aux2 = aux2->next;
         }
       }
+      //traversing the list
       if (aux != NULL)
         aux = aux->next;
     }
   }
-
   return medianListHead;
 }
 
@@ -266,6 +241,8 @@ void getMinMaxTemp(node_t* pointsHead){
   minPointTemp = 1000.0f;
   maxPointTemp = -1000.0f;
 
+  //gets the minimum and maximum temperature of the points list
+  //assigns them to global variables, used for the color scale
   aux = pointsHead;
   while (aux != NULL){
     if (aux->data.temp < minPointTemp)
@@ -282,13 +259,16 @@ node_t* freeSortedList(node_t* head){
 
   printf("Freeing list...\n");
 
+  //traversing the list
   while (aux != NULL){
+    //aux becomes the next element after the head
     aux = aux->next;
+    //freeing the head
     free(head->data.name);
     free(head);
+    //aux is the new head, so we equal the head to aux
     head = aux;
   }
-
   //head will always be NULL
   return head;
 }
@@ -302,12 +282,15 @@ node_t* getNewNode(temp data, data2 pos){
     exit (EXIT_FAILURE);
   }
 
+  //getting the data passed to the function and putting it on the new node
   newNode->data.year = data.year;
   newNode->data.month = data.month;
   newNode->data.temp = data.temp;
   newNode->pos = pos;
+  //allocating memory for the name and copying it
   newNode->data.name = (char*)malloc( (strlen(data.name) + 1) * sizeof(char) );
   strcpy(newNode->data.name, data.name);
+  //setting the 'next' pointer to nothing
   newNode->next = NULL;
 
   return newNode;
@@ -333,6 +316,7 @@ node_t* sortedInsert(node_t* head, node_t** ptrArray, node_t* newNode){
     if (newNode->data.year < head->data.year ||
       (newNode->data.year == head->data.year && newNode->data.month <= head->data.month)){
 
+      //newNode points to the head
       newNode->next = head;
       ptrArray[index] = newNode;
       return newNode;
@@ -518,19 +502,24 @@ top_t yearlyTemp_getInfoByName(node_t* sampleYearPointer, char* name){
   int counter = 0;
   float maxTemp = -1000.0f, minTemp = 1000.0f;
 
+  //while we are traversing the list through the year we are analysing
   while (aux->data.year == sampleYear && aux->next != NULL){
+    //if we found a name we are looking for
     if (strstr(aux->data.name, name) != NULL){
       carryAdder += aux->data.temp;
       counter++;
 
+      //determining maximum and minimum
       if (aux->data.temp < minTemp)
         minTemp = aux->data.temp;
       if (aux->data.temp > maxTemp)
         maxTemp = aux->data.temp;
     }
+    //traversing the list
     aux = aux->next;
   }
 
+  //filling a data struct with the name, median temp and temp range
   strcpy(data.name, name);
   data.temp = ((float)carryAdder / (float)counter);
   data.range = maxTemp - minTemp;

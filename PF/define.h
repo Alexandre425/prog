@@ -41,14 +41,14 @@
 //the main function of the textual mode of the program
 //runs all the functions related to the functionality of the
 //textual mode
-//1. *countriesFile - the file pointer to the countries file
-//2. *citiesFile - the file pointer to the cities file
+//1. countriesFile - the countries file
+//2. citiesFile - the cities file
 void textualMode(FILE*, FILE*);
 
 //the main function of the visual mode of the program
 //runs all the functions related to the functionality of the
 //visual mode. Only needs the cities file
-//1. *citiesFile - the file pointer to the cities file
+//1. citiesFile - the cities file
 void visualMode(FILE*);
 
 //############################################################
@@ -66,15 +66,15 @@ void visualMode(FILE*);
 int readArguments(int, char const*[], char[2][FILE_NAME_SIZE]);
 
 //opens the data files
-//1. mode - the program operating mode
+//1. mode - the program operating mode, used for deciding what to open
 //2. fileNames - names of the two files, read by readArguments
-//3. **countriesFile - the file pointer to the country file
-//4. **citiesFile - the file pointer to the cities file
+//3. countriesFile - the countries file
+//4. citiesFile - the cities file
 void openFiles(int, char[2][FILE_NAME_SIZE], FILE**, FILE**);
 
 //closes the data files
-//1. *countriesFile - the file pointer to the countries file
-//2. *citiesFile - the file pointer to the cities file
+//1. countriesFile - the countries file
+//2. citiesFile - the cities file
 void closeFiles(FILE*, FILE*);
 
 //############################################################
@@ -87,69 +87,70 @@ void closeFiles(FILE*, FILE*);
 
 //returns a 'ListInfo' struct for a file, with information on
 //its year range
-//1. *file - a file, can either be countriesFile or citiesFile
+//1. file - a file, can either be countriesFile or citiesFile
 ListInfo getFileInfo(FILE*);
 
+//does the same as the above function, but with a list instead of a file
 ListInfo getListInfo(node_t*);
 
-//allocates memory for the auxiliary array of pointers to nodes
-//from the lists
+//allocates memory for the auxiliary array of pointers to nodes from the lists
+//these are used in sorted insertion so it does not start at the list head every time,
+//cutting a great ammount of time from the sorting. Used as a look up table, the sorted
+//insert function looks in the array for a pointer to the first instance (on the list)
+//which has the same year as the new node, starting the insertion from there. If it doesn't
+//exist, it sets that pointer to the new node, so the next one with the same
+//year's insertion process begins there.
 //returns the pointer to the allocated array
 //1. range - year range of the file
 node_t** allocateAuxArray(int);
 
-//analizes the list and allocates an array of pointers to the
-//first entry on each city on the list
-//returns the pointer to the allocated array
-node_t** createGraphicalAuxArray(node_t*);
-
-//creates a sorted copy of the data files in memory
-//1. *countriesFile - the file pointer to the country file
-//2. **countriesHead - the head of the country list
-//3. **countriesYearArray - the auxiliary year array of pointers
-//4. *citiesFile - the file pointer to the cities file
-//5. **citiesHead - the head of the city list
-//6. **citiesYearArray - the auxiliary year array of pointers
+//reads the files and sorts the data into two lists
+//1. countriesFile - the country file
+//2. countriesHead - the head of the country list
+//3. countriesYearArray - the auxiliary year array of pointers
+//4. citiesFile - the cities file
+//5. citiesHead - the head of the city list
+//6. citiesYearArray - the auxiliary year array of pointers
 void createSortedLists(FILE*, node_t**, node_t**, FILE*, node_t**, node_t**);
 
-//loads the city file into a list
+//reads the city file and creates a copy of it as a list
 //returns the loaded list
-//1. *citiesFile - the file pointer to the cities file
+//1. citiesFile - the cities file
 node_t* loadCityList(FILE*);
 
 //creates a list with the cities' median temperature and coordinates for
-//a year. Each node corresponds to a city in a year, sorted by
-//their years
+//each year. Each node corresponds to a city in a year, sorted by their years
+//the graphical mode simple reads it node-by-node for each year and draws the points
+//according to their temperature and coordinates
 //returns the created list's head
 //1. head - the head of the main list
 node_t* createMedianTempCityList(node_t*);
 
-//determines the minimum and maximum temperature point. Used to determine
-//what the "red-est" and "blue-est" points will be
+//determines the minimum and maximum temperature in the median temp city list.
+//Used to determine what the "red-est" and "blue-est" points will be
 //1. pointsHead - the point list head
 void getMinMaxTemp(node_t*);
 
 //frees the sorted copies of the data files in memory
 //returns the new head (which will be NULL)
-//1. *head - the head of the list to be freed
+//1. head - the head of the list to be freed
 node_t* freeSortedList(node_t*);
 
 //allocates memory for a new list node
 //returns the pointer to the new node
-//1. data - data1 struct. Described in 'struct.h'
-//2. pos - data2 struct. Described in 'struct.h'
+//1. data - data1 struct. Contains things like the name and temperature
+//2. pos - data2 struct. Contains coordinates
 node_t* getNewNode(temp, data2);
 
 //does a sorted insertion of a new list node
-//returns the head pointer of the list
+//returns the (possibly new) head pointer of the list
 //1. head - the list head
-//2. ptrArray - the array of year pointers
+//2. ptrArray - the array of auxiliary pointers to the list
 //3. newNode - the new node to be inserted
 node_t* sortedInsert(node_t*, node_t**, node_t*);
 
 //deletes a node from the list
-//1. aux - pointer to the list entry before the
-//  one which will be deleted
+//1. aux - pointer to the list entry BEFORE the one which will be deleted
 void deleteNode(node_t*);
 
 //deletes the list head
@@ -218,9 +219,13 @@ void mainMenu(node_t*, node_t*);
 //4. filtCitiesHead - the head of the filtered city list
 void dataFilterMenu(node_t*, node_t*, node_t**, node_t**);
 
+//allows the user to remove data before an input date from the list
 void initalDateFilter(node_t**, node_t**);
+//allows the user to remove data not corresponding to an input season
 void seasonFilter(node_t**, node_t**);
+  //deletes the input season
   void deleteSeason(node_t**, int, int);
+//allows the user to reset the data previously filtered, returning to the full data set
 void resetFilter(node_t*, node_t*, node_t**, node_t**);
 
 //the temperature history menu, allows the user to see
@@ -230,11 +235,13 @@ void resetFilter(node_t*, node_t*, node_t**, node_t**);
 //2. filtCitiesHead - the head of the filtered city list
 void tempHistoryMenu(node_t*, node_t*);
 
-  //gets the size of the struct array to be allocated
+  //gets the size of the struct array to be allocated. the array will
+  //have the data to be printed
   int getAllocSize(int, int);
-  //prints the temperature history in a 20 entry page
+  //prints the temperature history in 20 entry pages
   void printTempHistory(hist*, char[HEADER_SIZE], int);
 
+//these generate the hist array with the data to be printed
 void tempHistoryGlobal(node_t*, int);
 void tempHistoryCountry(node_t*, int);
 void tempHistoryCity(node_t*, int);
@@ -246,16 +253,19 @@ void tempHistoryCity(node_t*, int);
 //2. filtCitiesHead - the head of the filtered city list
 void yearlyTempMenu(node_t*, node_t*);
 
-  //prints the top x list of countries or cities, based on the
-  //sorted median temp. and temp. range lists
+  //prints the top x list of countries or cities, based on the sorted median temp.
+  //and temp. range lists. The first has it's first and last x elements printed
+  //(for the maximum and minimum median temperatures), the second has the first x
+  //elements printed (for the largest temperature range)
   void printYearlyTemp(top_t*, top_t*, int, int);
 
+//these get the number of entries to be shown and call the functions
+//that create the top_t* lists
 void yearlyTempCountries(node_t*, int);
 void yearlyTempCities(node_t*, int);
 
-//the global temperature analisis menu, uses the moving average
-//to calculate the temperature change globally, or for a country
-//or city
+//the global temperature analisis menu, uses the moving average to calculate
+//the temperature change globally, or for a country or city
 //1. filtCountriesHead - the head of the filtered country list
 //2. filtCitiesHead - the head of the filtered city list
 void globalTempMenu(node_t*, node_t*);
@@ -270,6 +280,7 @@ void globalTempMenu(node_t*, node_t*);
   //the moving average calculation
   float* getMovingAverage(median*, int, int);
 
+//these simply run the above functions and ask for the names
 void globalTempGlobal(node_t*, int);
 void globalTempCountry(node_t*, int);
 void globalTempCity(node_t*, int);

@@ -23,9 +23,9 @@ int main(int argc, char const *argv[]) {
   int mode = -1;
 
   system("clear");
-
+  //reads the user input arguments
   mode = readArguments(argc, argv, fileNames);
-
+  //opening the files, depending on the read arguments
   openFiles(mode, fileNames, &countriesFile, &citiesFile);
 
   if (mode == 0)

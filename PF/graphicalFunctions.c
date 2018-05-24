@@ -93,8 +93,10 @@ void mainLoop(node_t* pointsHead, graph* SDL){
 
   renderGreetingMenu(SDL);
 
+  //while the user has not quit
   while (quit == 0){
 
+    //while there are events to handle
     while (SDL_PollEvent(&SDL->event)){
 
       switch(SDL->event.type){
@@ -103,8 +105,10 @@ void mainLoop(node_t* pointsHead, graph* SDL){
           return;
           break;
 
+        //if any key is pressed, the map loop is ran
         case SDL_KEYDOWN:
           quit = mapLoop(pointsHead, SDL);
+          //as soon as we return from the map loop, draw the greeting menu
           renderGreetingMenu(SDL);
           break;
       }
@@ -120,6 +124,7 @@ void renderGreetingMenu(graph* SDL){
   //putting the rectangle in the upper left corner
   rectangle.x = 0;
   rectangle.y = 0;
+  //demensions equal to the window size (occupies the whole window)
   rectangle.w = WINDOW_WIDTH;
   rectangle.h = WINDOW_HEIGHT;
 
@@ -129,6 +134,7 @@ void renderGreetingMenu(graph* SDL){
   //freeing up the memory allocated for the texture
   SDL_DestroyTexture(background);
 
+  //presenting the greeting menu
   SDL_RenderPresent(SDL->renderer);
 
 }
@@ -142,8 +148,10 @@ int mapLoop(node_t* pointsHead, graph* SDL){
 
   int year = minYear;
 
+  //while the user hasn't chosen to quit or return to the main menu
   while (quit == 0 && ret == 0){
 
+    //render the map, the years, the moving bar, penguin and points for the current year
     ret = 0;
     renderMap(SDL);
     renderYears(SDL, &barLimits, year);
@@ -151,18 +159,22 @@ int mapLoop(node_t* pointsHead, graph* SDL){
     renderPenguin(SDL, year, bar);
     renderPoints(SDL, year, pointsHead);
 
+    //handling the needed events
     while (SDL_PollEvent(&SDL->event)){
 
       switch(SDL->event.type){
 
+        //the quit value is returned to the main loop, where it is handled and closes the window
         case SDL_QUIT:
           quit = 1;
           break;
 
         case SDL_KEYDOWN:
 
+          //handling the return and pause buttons
           switch(SDL->event.key.keysym.sym){
 
+            //this simply breaks the look, returning to the main loop
             case SDLK_r:
               ret = 1;
               break;
@@ -175,9 +187,11 @@ int mapLoop(node_t* pointsHead, graph* SDL){
       }
     }
 
+    //incrementing the year until we reach the end
     if (year < maxYear)
       year++;
 
+    //presenting the renderer and applying a delay
     SDL_RenderPresent(SDL->renderer);
     SDL_Delay(100);
   }
@@ -231,15 +245,18 @@ void renderYears(graph* SDL, SDL_Rect* barLimits, int year){
   textTexture = SDL_CreateTextureFromSurface(SDL->renderer, textSurface);
   //getting the texture size
   SDL_QueryTexture(textTexture, NULL, NULL, &rectangle.w, &rectangle.h);
-  //rendering
+  //rendering in a rectangle with the corresponding size
   SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
-
+  //freeing up the used memory
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);
 
+  //defining the bar's starting point as the end of the first year plus a margin
   barLimits->x = MARGIN + rectangle.w + MARGIN;
+  //as well as the same y position as the text
   barLimits->y = rectangle.y;
 
+  //rendering the last year
   textSurface = TTF_RenderText_Blended(SDL->font, endYear, black);
   if (textSurface == NULL){
     printf("%s\n", TTF_GetError());
@@ -250,14 +267,15 @@ void renderYears(graph* SDL, SDL_Rect* barLimits, int year){
   rectangle.x = WINDOW_WIDTH - MARGIN - rectangle.w;
   rectangle.y = MAP_HEIGHT + MARGIN;
   SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
-
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);
 
+  //determining the maximum width of the bar (in between the two years, with margins)
   barLimits->w = WINDOW_WIDTH - barLimits->x - MARGIN - rectangle.w - MARGIN;
+  //height is the same as the years'
   barLimits->h = rectangle.h;
 
-
+  //rendering the current year
   textSurface = TTF_RenderText_Blended(SDL->font, currYear, black);
   if (textSurface == NULL){
     printf("%s\n", TTF_GetError());
@@ -265,13 +283,12 @@ void renderYears(graph* SDL, SDL_Rect* barLimits, int year){
   }
   textTexture = SDL_CreateTextureFromSurface(SDL->renderer, textSurface);
   SDL_QueryTexture(textTexture, NULL, NULL, &rectangle.w, &rectangle.h);
+  //it is rendered in the middle of the screen
   rectangle.x = (MAP_WIDTH / 2) - (rectangle.w / 2);
   rectangle.y = MAP_HEIGHT - rectangle.h - MARGIN;
   SDL_RenderCopy(SDL->renderer, textTexture, NULL, &rectangle);
-
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);
-
 }
 
 SDL_Rect renderBar(graph* SDL, int year, SDL_Rect barLimits){
@@ -282,6 +299,7 @@ SDL_Rect renderBar(graph* SDL, int year, SDL_Rect barLimits){
   bar.x = barLimits.x;
   bar.y = barLimits.y;
 
+  //height is always the same
   bar.h = barLimits.h;
   //determining the width of the bar, based on the year
   bar.w = ((year - minYear) * barLimits.w) / (maxYear - minYear);
@@ -299,6 +317,7 @@ void renderPenguin(graph* SDL, int year, SDL_Rect bar){
   SDL_Texture* penguin;
   SDL_Rect rectangle;
 
+  //penguin is drawn at the end of the bar
   rectangle.x = bar.x + bar.w - (PENGUIN_WIDTH / 2);
   rectangle.y = bar.y;
   rectangle.w = PENGUIN_WIDTH;
@@ -404,29 +423,34 @@ void renderPoints(graph* SDL, int year, node_t* pointsHead){
     aux = aux->next;
   }
 
+  //while we haven't reached the end of the list
   while (aux != NULL){
     //stopping when we get past the year we are printing
     if (aux->data.year != year)
       break;
 
+    //getting the color and position to draw the point with
     color = getColor(aux->data.temp);
     pos = getPosition(aux->pos);
     filledCircleRGBA(SDL->renderer, pos.x, pos.y, CIRCLE_RADIUS, color.r, color.g, color.b);
 
+    //traversing the list
     aux = aux->next;
   }
-
 }
 
 void mapLoopPause(graph* SDL, int* quit, int* ret){
 
   int unpause = 0;
 
+  //while the user hasn't unpaused
   while (unpause == 0){
+    //handling events
     while (SDL_PollEvent(&SDL->event)){
 
       switch(SDL->event.type){
 
+        //quitting unpauses to allow previous functions to process the quit
         case SDL_QUIT:
           *quit = 1;
           unpause = 1;
@@ -436,11 +460,13 @@ void mapLoopPause(graph* SDL, int* quit, int* ret){
 
           switch(SDL->event.key.keysym.sym){
 
+            //if the user returns while paused
             case SDLK_r:
               *ret = 1;
               unpause = 1;
               break;
 
+            //if the user unpauses
             case SDLK_SPACE:
               unpause = 1;
               break;

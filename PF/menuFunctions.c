@@ -237,14 +237,14 @@ int getNumMonths (){
   int numMonths = 0;
   char buffer[BUFFER_SIZE] = {0};
 
-  while (numMonths <= 0 || numMonths > 1000){
+  while (numMonths <= 1 || numMonths > 1000){
     buffer[0] = '\0';
     system("clear");
     printf("Insert the number of months for the Moving Average calculation: ");
     fgets(buffer, BUFFER_SIZE, stdin);
     sscanf(buffer, "%d", &numMonths);
 
-    if (numMonths <= 0 || numMonths > 1000){
+    if (numMonths <= 1 || numMonths > 1000){
       printf("Inserted number is not valid!\n");
       sleep(2);
     }
@@ -326,14 +326,16 @@ void initalDateFilter(node_t** filtCountriesHead, node_t** filtCitiesHead){
     }
   }
 
+  //runs through the filtered list
   while ((*filtCountriesHead)->next != NULL){
     //if next entry is the first we want to keep
     if ((*filtCountriesHead)->next->data.year == year && (*filtCountriesHead)->next->data.month == month){
+      //in that case, we sever the list
       auxCountries = *filtCountriesHead;
+      //the new head, the second part of the list
       *filtCountriesHead = (*filtCountriesHead)->next;
-      //severing the list
       auxCountries->next = NULL;
-      //this deletes the first part of the list
+      //this deletes the first part of the list, and keeps the second
       freeSortedList(oldCountriesHead);
       break;
     }
@@ -424,10 +426,9 @@ void seasonFilter(node_t** filtCountriesHead, node_t** filtCitiesHead){
     }
   }
 
+  //deletes the input season on both lists
   deleteSeason(filtCountriesHead, iniMonth, finMonth);
   deleteSeason(filtCitiesHead, iniMonth, finMonth);
-
-
 }
 
 void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountriesHead, node_t** filtCitiesHead){
@@ -440,6 +441,7 @@ void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountri
   temp data;
   data2 pos;
 
+  //frees the filtered lists
   *filtCountriesHead = freeSortedList(*filtCountriesHead);
   *filtCitiesHead = freeSortedList(*filtCitiesHead);
 
@@ -459,22 +461,23 @@ void resetFilter(node_t* countriesHead, node_t* citiesHead, node_t** filtCountri
 
   while (aux1->next != NULL){
 
+    //moves once through the main list
     aux1 = aux1->next;
-
+    //copies the data
     data.year = aux1->data.year;
     data.month = aux1->data.month;
     data.temp = aux1->data.temp;
     pos = aux1->pos;
     strcpy(data.name, aux1->data.name);
+    //allocates a new node with the copied data
     newNode = getNewNode(data, pos);
 
-    //inserting the new node after the last
+    //inserting the new node after the last (in the copied list)
     aux2->next = newNode;
     aux2 = aux2->next;
   }
 
     //same process for the city list
-
     aux1 = citiesHead;
 
     data.year = aux1->data.year;
@@ -577,20 +580,22 @@ void printTempHistory(hist* histData, char header[HEADER_SIZE], int lines){
 
 void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
 
-  ListInfo info;
-  info = getListInfo(filtCountriesHead);
+  node_t* aux = NULL;
+  char header[HEADER_SIZE] = {0};
 
+  //getting the year range on the filtered list
+  ListInfo info = getListInfo(filtCountriesHead);
+
+  //determining the size of the array to be allocated (how many entries it will have)
   int lines = getAllocSize(info.range, samplePeriod);
-  int targetYear = info.minYear + samplePeriod;
+  //array with all the information to be printed
+  hist* histData = NULL;
 
   float maxTemp = -3000.0f, minTemp = 3000.0f, medTemp = 0.0f;
   float carryAdder = 0.0f;
   int counter = 0;
 
-  node_t* aux = NULL;
-  //array with all the information to be printed
-  hist* histData = NULL;
-  char header[HEADER_SIZE] = {0};
+  int targetYear = info.minYear + samplePeriod;
 
   histData = (hist*)malloc(sizeof(hist) * lines);
   if (histData == NULL){
@@ -600,10 +605,12 @@ void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
 
   sprintf(header, "Global Temperature History - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", samplePeriod);
 
+  //for to fill in all the lines
   aux = filtCountriesHead;
   for (int i = 0; i < lines; i++){
-
+    //this while will do the average from the current year to the target year
     while (aux != NULL && aux->data.year < targetYear){
+      //determining the new maximum and/or minimum
       if (aux->data.temp < minTemp)
         minTemp = aux->data.temp;
       if (aux->data.temp > maxTemp)
@@ -613,33 +620,37 @@ void tempHistoryGlobal(node_t* filtCountriesHead, int samplePeriod){
       counter++;
       aux = aux->next;
     }
-
+    //calculating the median temperature for the current year bracket
     medTemp = (float)carryAdder / (float)counter;
     carryAdder = 0.0f;
     counter = 0;
 
+    //if the target year surpasses the last year on the file/filtered list
     if (targetYear > info.maxYear)
       targetYear = info.maxYear;
 
+    //if the period has valid data (some year brackets have no data)
     histData[i].iniYear = 0;
     if (maxTemp != -3000.0f && minTemp != 3000.0f){
+      //writting the data on the array which will later be printed
       histData[i].iniYear = (targetYear - samplePeriod);
       histData[i].finYear = targetYear;
       histData[i].maxTemp = maxTemp;
       histData[i].minTemp = minTemp;
       histData[i].medTemp = medTemp;
     }
-
+    //resetting to the ddefault minimum and maximum
     minTemp = 3000.0f;
     maxTemp = -3000.f;
     medTemp = 0.0f;
 
+    //getting the next target year
     targetYear += samplePeriod;
-
   }
 
+  //printing the gathered data
   printTempHistory(histData, header, lines);
-
+  //freeing the used array
   free(histData);
 }
 
@@ -685,7 +696,7 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
     return;
   }
 
-  //only need to allocate the array to be printed if we
+  //only need to allocate the array to be printed if we found the name
   histData = (hist*)calloc(lines, sizeof(hist));
   if (histData == NULL){
     printf("Memory allocation error!\n");
@@ -694,10 +705,12 @@ void tempHistoryCountry(node_t* filtCountriesHead, int samplePeriod){
 
   sprintf(header, "Temperature history for %s - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", buffer, samplePeriod);
 
+  //note: most of this code is simmilar to the one on the function above
   aux = filtCountriesHead;
   for (int i = 0; i < lines; i++){
 
     while (aux != NULL && aux->data.year < targetYear){
+      //checking to see if the data corresponds to the searched country
       if (strstr(aux->data.name, buffer) != NULL){
         if (aux->data.temp < minTemp)
           minTemp = aux->data.temp;
@@ -781,7 +794,7 @@ void tempHistoryCity(node_t* filtCitiesHead, int samplePeriod){
     return;
   }
 
-  //only need to allocate the array to be printed if we
+  //only need to allocate the array to be printed if we found the name
   histData = (hist*)calloc(lines, sizeof(hist));
   if (histData == NULL){
     printf("Memory allocation error!\n");
@@ -790,6 +803,7 @@ void tempHistoryCity(node_t* filtCitiesHead, int samplePeriod){
 
   sprintf(header, "Temperature history for %s - %d year sample period\n\nINTERVALS |   MIN. T\t|   MAX. T\t|   MED. T\n", buffer, samplePeriod);
 
+  //this code is almost the same as the one on the function above, read it for the commented code
   aux = filtCitiesHead;
   for (int i = 0; i < lines; i++){
 
@@ -864,12 +878,14 @@ char** allocateStringArray(int numberOfEntries){
 
   char** stringArray = NULL;
 
+  //allocates an array of pointers to strings
   stringArray = (char**)malloc(sizeof(char*) * numberOfEntries);
   if (stringArray == NULL){
     printf("Memory allocation error!\n");
     exit(-1);
   }
 
+  //allocates space for each of the strings
   for (int i = 0; i < numberOfEntries; i++){
     stringArray[i] = NULL;
     stringArray[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
@@ -884,9 +900,11 @@ char** allocateStringArray(int numberOfEntries){
 
 void freeStringArray(char** stringArray, int numberOfEntries){
 
+  //frees each of the strings
   for (int i = 0; i < numberOfEntries; i++)
     free(stringArray[i]);
 
+  //frees the array of pointers
   free(stringArray);
 }
 
@@ -924,8 +942,11 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
       minTempPointer = minTempPointer->next;
   }
 
+  //filling the string array with
   for (int i = 0; i < numberOfEntries; i++){
     sprintf(maxTempStrings[i], "%s", maxTempPointer->name);
+    //the minimum temperature top-x is filled from the bottom up, process
+    //described in the 'define.h' file
     sprintf(minTempStrings[numberOfEntries - 1 - i], "%s", minTempPointer->name);
     sprintf(rangeStrings[i], "%s", rangePointer->name);
     maxTempPointer = maxTempPointer->next;
@@ -933,11 +954,14 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
     rangePointer = rangePointer->next;
   }
 
+  //printing everything
   printf("%s\n", header);
   for (int i = 0; i < numberOfEntries; i++){
     printf("%d.\t", i + 1);
 
     printf("%s", maxTempStrings[i]);
+    //printing spaces to place the '|' separators on the correct place
+    //this depends on the length of the printed string
     for (int j = 0; j < 56 - strlen(maxTempStrings[i]); j++)
       printf(" ");
     printf("%s", minTempStrings[numberOfEntries - 1 - i]);
@@ -947,6 +971,7 @@ void printYearlyTemp(top_t* tempHead, top_t* rangeHead, int numberOfEntries, int
 
   }
 
+  //freeing the string arrays
   freeStringArray(maxTempStrings, numberOfEntries);
   freeStringArray(minTempStrings, numberOfEntries);
   freeStringArray(rangeStrings, numberOfEntries);
@@ -963,14 +988,18 @@ void yearlyTempCountries(node_t* filtCountriesHead, int sampleYear){
   //has the countries sorted by their temperature range
   top_t* rangeHead = NULL;
 
+  //creating the median temperature and temperature range lists, sends the country lists
   yearlyTemp_createSortedLists(filtCountriesHead, sampleYear, &tempHead, &rangeHead);
 
+  //if nothing was returned, i.e. the input year was out of the data filter
   if (tempHead == NULL || rangeHead == NULL){
     return;
   }
 
+  //sending the lists to the printing function
   printYearlyTemp(tempHead, rangeHead, numberOfEntries, COUNTRY);
 
+  //freeing the lists
   tempHead = yearlyTemp_freeSortedList(tempHead);
   rangeHead = yearlyTemp_freeSortedList(rangeHead);
 
@@ -984,6 +1013,7 @@ void yearlyTempCities(node_t* filtCitiesHead, int sampleYear){
   //has the countries sorted by their temperature range
   top_t* rangeHead = NULL;
 
+  //same as the above function, but sends the city list instead
   yearlyTemp_createSortedLists(filtCitiesHead, sampleYear, &tempHead, &rangeHead);
 
   printYearlyTemp(tempHead, rangeHead, numberOfEntries, CITY);
@@ -998,12 +1028,14 @@ void yearlyTempCities(node_t* filtCitiesHead, int sampleYear){
 void printGlobalTemp(float tempChangeArray[5],  char header[HEADER_SIZE]){
 
   char buffer[BUFFER_SIZE];
+  //the years where the temperature change is calculated
   int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
 
   system("clear");
 
   printf("%s", header);
 
+  //printing the calculated temperature change
   for (int i = 0; i < 5; i++){
     if (tempChangeArray[i] != 0.0f)
       printf(" %d  | %.2f\n", tempChangeYears[i], tempChangeArray[i]);
@@ -1042,9 +1074,12 @@ median* getMedianTempByMonth(node_t* head, int* lastIndex){
 
   aux = head;
   counter = 0;
+  //getting the median temperature for each month
   while (aux->next != NULL){
     carryAdder += aux->data.temp;
     counter++;
+    //if a month change is detected, processes the data which had been stored until now
+    //and stores it. Resets the carry adder for it to gather data on the next month
     if (aux->data.year != aux->next->data.year || aux->data.month != aux->next->data.month){
       medianArray[index].year = aux->data.year;
       medianArray[index].month = aux->data.month;
@@ -1057,7 +1092,6 @@ median* getMedianTempByMonth(node_t* head, int* lastIndex){
   }
 
   return medianArray;
-
 }
 
 median* getMedianTempByName(node_t* head, int* lastIndex, char name[BUFFER_SIZE]){
@@ -1071,7 +1105,7 @@ median* getMedianTempByName(node_t* head, int* lastIndex, char name[BUFFER_SIZE]
   //getting the allocation size
   aux = head;
   while (aux != NULL){
-    //detecting a change in date, meaning we must allocate for one more month
+    //if we find an entry with the name we are looking for, adding an entry to the array
     if (strstr(aux->data.name, name) != NULL);
       counter++;
     aux = aux->next;
@@ -1088,7 +1122,9 @@ median* getMedianTempByName(node_t* head, int* lastIndex, char name[BUFFER_SIZE]
 
   aux = head;
   counter = 0;
+  //traversing the list
   while (aux != NULL){
+    //storing the data if we find the name we are looking for
     if (strstr(aux->data.name, name) != NULL){
       medianArray[index].year = aux->data.year;
       medianArray[index].month = aux->data.month;
@@ -1118,25 +1154,30 @@ float* getMovingAverage(median* medianTempByMonth, int numMonths, int lastIndex)
   float tempChange = 0.0f;
 
   int tempChangeYears[5] = {2013, 1990, 1960, 1910, 1860};
+  //allocating memory for the array which store the temperature change in the specific years
   float* tempChangeArray = (float*)calloc(5, sizeof(float));
   if (tempChangeArray == NULL){
     printf("Memory allocation error!\n");
     exit (EXIT_FAILURE);
   }
 
+  //determining the initial target index
   targetIndex = startIndex + numMonths - 1;
   while (targetIndex < lastIndex){
 
     carryAdder = 0.0f;
     counter = 0;
     aux = startIndex;
+    //adding up the values from the start index to the target index
     while (aux < targetIndex){
       carryAdder += medianTempByMonth[aux].temp;
       counter++;
       aux++;
     }
+    //calculating the moving average
     movingAverage = ((float)carryAdder / (float)counter);
 
+    //determining if the calculated average is a minimum or maximum
     if (movingAverage < minTemp){
       minTemp = movingAverage;
       minTempYear = medianTempByMonth[targetIndex].year;
@@ -1148,6 +1189,7 @@ float* getMovingAverage(median* medianTempByMonth, int numMonths, int lastIndex)
 
     tempChange = maxTemp - minTemp;
 
+    //saving the temperature change (max - min) for the specific years
     for (int i = 0; i < 5; i++){
       if (medianTempByMonth[targetIndex].year == tempChangeYears[i]){
         tempChange = maxTemp - minTemp;
@@ -1211,14 +1253,18 @@ void globalTempCountry(node_t* filtCountriesHead, int numMonths){
     return;
   }
 
+  //getting the median temperature vector with entries for each month
   median* medianTempByMonth = getMedianTempByName(filtCountriesHead, &lastIndex, buffer);
+  //calculating the moving average of the medians
   float* tempChangeArray = getMovingAverage(medianTempByMonth, numMonths, lastIndex);
 
   char header[HEADER_SIZE] = {0};
   sprintf(header, "Global Temperature Analisis for %s\n\n Until | Temperature change\n", buffer);
 
+  //printing the temperature change
   printGlobalTemp(tempChangeArray, header);
 
+  //freeing the arrays with the median temperatures and temperature change
   free(medianTempByMonth);
   free(tempChangeArray);
 }
@@ -1254,6 +1300,7 @@ void globalTempCity(node_t* filtCitiesHead, int numMonths){
     return;
   }
 
+  //same as the country function, with the other list
   median* medianTempByMonth = getMedianTempByName(filtCitiesHead, &lastIndex, buffer);
   float* tempChangeArray = getMovingAverage(medianTempByMonth, numMonths, lastIndex);
 
